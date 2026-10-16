@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#290087">
+  <meta name="description" content="Duang Pang is a quiet space for tarot, reflection, and a fresh perspective. Choose your question, draw your cards, and explore your reading.">
+  <title>Duang Pang — A little clarity. A little magic.</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/motion.css">
+  <link rel="stylesheet" href="./css/cosmic.css">
+  <script type="module" src="./js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#home" aria-label="Duang Pang home"><span class="brand-symbol" aria-hidden="true">✧</span><span>duang<span class="brand-light">pang</span><small>TAROT & A LITTLE MAGIC</small></span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#home" data-i18n="navHome">Home</a>
+        <a href="#about" data-i18n="navAbout">Our approach</a>
+        <a href="#reading" data-i18n="navRead">Read the cards</a>
+        <a href="#results" data-i18n="navResult">Your reading</a>
+      </nav>
+      <div class="header-actions">
+        <button class="language-button" id="language-toggle" type="button" aria-label="Switch language to Thai">EN <span aria-hidden="true">⌄</span></button>
+        <a class="button button-small button-dark" href="#reading"><span data-i18n="begin">Begin a reading</span><span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="home" aria-labelledby="hero-title">
+      <div class="hero-constellations" aria-hidden="true"></div>
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✦</span> <span data-i18n="heroEyebrow">A QUIET MOMENT, JUST FOR YOU</span></p>
+          <h1 id="hero-title"><span data-i18n="heroLine1">A little clarity.</span><br><em data-i18n="heroLine2">A little magic.</em></h1>
+          <p class="hero-description" data-i18n="heroDescription">For the questions on your mind and the feelings in your heart. Let the cards offer a fresh perspective on your story.</p>
+          <div class="hero-buttons"><a class="button button-gold" href="#reading"><span data-i18n="heroCta">Find your perspective</span><span aria-hidden="true">↗</span></a><a class="text-link light-link" href="#about" data-i18n="howItWorks">How it works</a></div>
+          <p class="hero-note"><span aria-hidden="true">✧</span> <span data-i18n="heroNote">Your intuition. Your journey. A little guidance.</span></p>
+        </div>
+        <figure class="hero-art" aria-label="A celestial tarot deck">
+          <div class="hero-scene" aria-hidden="true">
+            <div class="hero-aura"></div>
+            <span class="hero-orbit hero-orbit--outer"></span>
+            <span class="hero-orbit hero-orbit--inner"></span>
+            <div class="hero-stars">
+              <span class="hero-star">✦</span><span class="hero-star">✧</span>
+              <span class="hero-star">✦</span><span class="hero-star">✧</span>
+              <span class="hero-star">✦</span><span class="hero-star">✧</span>
+              <span class="hero-star">✦</span><span class="hero-star">✧</span>
+            </div>
+            <!-- Use the actual deck scans when supplied; otherwise show our celestial card backs. -->
+            <div class="hero-card hero-card--left is-awaiting-art">
+              <div class="hero-card-inner">
+                <img class="hero-card-image" src="./assets/images/tarot/m18.jpg" alt="The Moon tarot card" width="180" height="300" decoding="async">
+                <img class="hero-card-back" src="./assets/card-back.svg" alt="" width="180" height="300">
+              </div>
+            </div>
+            <div class="hero-card hero-card--center is-awaiting-art">
+              <div class="hero-card-inner">
+                <img class="hero-card-image" src="./assets/images/tarot/m17.jpg" alt="The Star tarot card" width="180" height="300" decoding="async">
+                <img class="hero-card-back" src="./assets/card-back.svg" alt="" width="180" height="300">
+              </div>
+            </div>
+            <div class="hero-card hero-card--right is-awaiting-art">
+              <div class="hero-card-inner">
+                <img class="hero-card-image" src="./assets/images/tarot/m19.jpg" alt="The Sun tarot card" width="180" height="300" decoding="async">
+                <img class="hero-card-back" src="./assets/card-back.svg" alt="" width="180" height="300">
+              </div>
+            </div>
+          </div>
+          <figcaption data-i18n="heroCaption">THE UNIVERSE HAS A WAY OF STARTING A CONVERSATION.</figcaption>
+        </figure>
+      </div>
+      <div class="hero-bottom"><span aria-hidden="true">✦</span><span data-i18n="heroBottom">A little less overthinking. A little more possibility.</span><span aria-hidden="true">✦</span></div>
+    </section>
+
+    <section class="about-section container" id="about" aria-labelledby="about-title">
+      <div class="about-intro"><img class="celestial-seal" src="./assets/celestial-seal.svg" width="94" height="94" alt="" aria-hidden="true"><p class="eyebrow" data-i18n="aboutEyebrow">AN OLD RITUAL. A FRESH PERSPECTIVE.</p><h2 id="about-title" data-i18n="aboutTitle">More than a yes or no.</h2><p data-i18n="aboutDescription">Your life has its own context. Bring a real question, make a little space, and explore what the cards bring to mind.</p></div>
+      <ol class="how-list">
+        <li><span class="how-number">01</span><h3 data-i18n="how1Title">Set an intention</h3><p data-i18n="how1Text">Choose a topic and tell us what is on your mind.</p></li>
+        <li><span class="how-number">02</span><h3 data-i18n="how2Title">Follow your intuition</h3><p data-i18n="how2Text">Shuffle the deck and choose the cards that call to you.</p></li>
+        <li><span class="how-number">03</span><h3 data-i18n="how3Title">Find a new angle</h3><p data-i18n="how3Text">Explore the meanings, reflect, and take what resonates.</p></li>
+      </ol>
+    </section>
+
+    <section class="reading-section" id="reading" aria-labelledby="reading-title">
+      <div class="container">
+        <div class="section-heading"><div><p class="eyebrow" data-i18n="readingEyebrow">YOUR MOMENT OF DISCOVERY</p><h2 id="reading-title" data-i18n="readingTitle">What’s on your mind?</h2></div><p class="section-aside" data-i18n="readingAside">Take a breath. Settle in.<br>There is no need to have it all figured out.</p></div>
+        <div class="reading-workspace">
+          <nav aria-label="Reading progress"><ol class="stepper" id="stepper"></ol></nav>
+          <div id="wizard" class="wizard" aria-busy="true"><p class="loading-message" data-i18n="loading">Preparing your deck…</p></div>
+        </div>
+        <p class="reading-footnote"><span aria-hidden="true">✧</span><span data-i18n="readingFootnote">A space for reflection, not a fixed prediction. Your next chapter is yours to write.</span></p>
+      </div>
+    </section>
+
+    <section class="results-section container" id="results" aria-labelledby="results-title">
+      <div id="results-content" class="empty-results"><span class="empty-symbol" aria-hidden="true">☾</span><p class="eyebrow" data-i18n="resultsEyebrow">A STORY WAITING TO UNFOLD</p><h2 id="results-title" data-i18n="emptyTitle">Your cards are waiting for you.</h2><p data-i18n="emptyText">Start a reading above. Your personal spread will appear here.</p><a class="text-link" href="#reading"><span data-i18n="emptyCta">Let’s begin</span> ↗</a></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="container footer-top"><a class="brand" href="#home"><span class="brand-symbol" aria-hidden="true">✧</span><span>duang<span class="brand-light">pang</span></span></a><p data-i18n="footerTagline">A little space to listen to yourself.</p><nav aria-label="Footer"><button type="button" class="footer-link" data-dialog="about" data-i18n="footerAbout">About</button><button type="button" class="footer-link" data-dialog="privacy" data-i18n="footerPrivacy">Privacy</button><button type="button" class="footer-link" data-dialog="disclaimer" data-i18n="footerDisclaimer">Reading note</button></nav></div><div class="container footer-bottom"><span>© <span id="year"></span> Duang Pang.</span><span data-i18n="footerNote">Made for reflection. Guided by you.</span></div></footer>
+  <dialog id="info-dialog" aria-labelledby="dialog-title"><div class="dialog-content"><button type="button" class="dialog-close" aria-label="Close dialog">×</button><span class="eyebrow">DUANG PANG</span><h2 id="dialog-title"></h2><p id="dialog-body"></p></div></dialog>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <noscript><div class="noscript">Please enable JavaScript to shuffle the cards and create a reading.</div></noscript>
+</body>
+</html>

@@ -1,0 +1,98 @@
+/* Celestial motion layer. No dependency; all decoration ignores pointer input. */
+.button { position: relative; overflow: hidden; isolation: isolate; }
+.button::after { content: ''; position: absolute; inset: -80% -50%; z-index: -1; background: linear-gradient(110deg, transparent 35%, #F6FFE946 49%, transparent 63%); transform: translateX(-100%) rotate(8deg); transition: transform .65s ease; pointer-events: none; }
+.button:hover:not(:disabled)::after, .button:focus-visible::after { transform: translateX(100%) rotate(8deg); }
+.button:hover:not(:disabled) { box-shadow: 0 5px 24px #A230A433, 0 0 18px #F2E0A415; }
+.button:active:not(:disabled) { transform: translateY(0) scale(.97); }
+.main-nav a { transition: color .25s, text-shadow .25s; }
+.main-nav a:hover { text-shadow: 0 0 16px #A230A444; }
+.brand-symbol { animation: sigil-turn 24s linear infinite; }
+.hero-copy > * { animation: celestial-rise .9s both cubic-bezier(.2,.7,.2,1); }
+.hero-copy > :nth-child(2) { animation-delay: .12s; }
+.hero-copy > :nth-child(3) { animation-delay: .24s; }
+.hero-copy > :nth-child(4) { animation-delay: .36s; }
+.hero-copy > :nth-child(5) { animation-delay: .48s; }
+.hero h1 em { background: linear-gradient(105deg, #F2E0A4 10%, #F6FFE9 33%, #CAC5E5 48%, #F2E0A4 67%, #F2E0A4 90%); background-size: 230% auto; color: transparent; background-clip: text; -webkit-background-clip: text; animation: title-luster 9s ease-in-out infinite; }
+.hero-card-inner { animation: card-levitate 7s ease-in-out infinite; }
+.hero-card--left .hero-card-inner { animation-delay: -2.5s; animation-duration: 8s; }
+.hero-card--right .hero-card-inner { animation-delay: -4.5s; animation-duration: 9s; }
+.hero-card { animation: celestial-rise 1.4s both cubic-bezier(.2,.7,.2,1); }
+.hero-card--left { animation-delay: .1s; }
+.hero-card--center { animation-delay: .25s; }
+.hero-card--right { animation-delay: .4s; }
+.hero-card-inner::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(115deg, transparent 30%, #F2E0A430 48%, transparent 62%); background-size: 280% 100%; animation: card-luster 10s ease-in-out infinite; }
+.hero-aura { animation: aura-breathe 8s ease-in-out infinite; }
+.hero-star { animation: star-breathe 4s ease-in-out infinite; }
+.hero-star:nth-child(3n) { animation-delay: -1s; animation-duration: 5s; }
+.hero-star:nth-child(3n + 1) { animation-delay: -2.5s; }
+.hero-star:nth-child(3n + 2) { animation-delay: -3.5s; animation-duration: 6s; }
+.hero-orbit--inner { animation: orbit-luster 12s ease-in-out infinite alternate; }
+.hero.is-offscreen *, .motion-paused * { animation-play-state: paused !important; }
+.choice-body { transition: background .25s, border-color .25s, transform .25s, box-shadow .25s; }
+.choice:hover .choice-body { transform: translateY(-3px); box-shadow: 0 5px 20px #2900870d; }
+.choice input:checked + .choice-body { animation: chosen-aura .6s ease-out; }
+.wizard-heading { animation: celestial-rise .45s both; }
+.deck-stage { isolation: isolate; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.deck-stage::before { content: none; }
+/* This layer exists only during a shuffle; the resting deck has no backdrop. */
+.shuffle-magic { position: absolute; inset: 0; pointer-events: none; z-index: 80; }
+.shuffle-dust { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: var(--dust-color); box-shadow: 0 0 4px #F2E0A480; opacity: 0; pointer-events: none; }
+.shuffle-dust--star { width: 7px; height: 7px; border-radius: 0; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); }
+/* A narrow highlight on just the visible packets avoids stacking twelve halos. */
+.deck-stage.shuffling .deck-card:nth-last-of-type(-n + 2)::after { content: ''; position: absolute; inset: 1px; border-radius: inherit; pointer-events: none; background: linear-gradient(115deg, transparent 38%, #F2E0A44d 49%, transparent 60%); background-size: 300% 100%; opacity: 0; animation: shuffle-sheen var(--shuffle-duration, 1900ms) ease-in-out both; }
+@keyframes shuffle-sheen { 0%,12% { background-position: 135% center; opacity: 0; } 35% { opacity: .65; } 70%,100% { background-position: -35% center; opacity: 0; } }
+.draw-action { margin-top: 14px; min-height: 50px; display: grid; place-items: center; }
+.deck-stage.fanned .deck-card:focus-visible { z-index: 25; box-shadow: 0 0 0 3px var(--gold), 0 0 20px #A230A470; }
+.deck-stage.fanned .deck-card:hover:not(:disabled) { box-shadow: 0 0 0 1px var(--gold), 0 0 23px #A230A475; }
+.deck-stage.drawing .deck-card { pointer-events: none; }
+.card-flight { position: fixed; z-index: 90; transform-origin: center; pointer-events: none; border-radius: 7px; }
+.card-flight img { width: 100%; height: 100%; border-radius: inherit; }
+.magic-spark { position: absolute; z-index: 30; pointer-events: none; color: #A230A4; font-size: 19px; line-height: 1; text-shadow: 0 0 7px #F2E0A4, 0 0 14px #A230A470; }
+.magic-spark:nth-of-type(even) { color: #9a7422; font-size: 14px; }
+.slot-card { position: relative; }
+.slot-card.is-filled { border: none; animation: slot-arrival .6s ease-out; }
+.result-ready { animation: celestial-rise .6s both; }
+.result-art { perspective: 900px; overflow: visible; isolation: isolate; background: transparent; }
+.reveal-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transform: rotateY(0deg); }
+.reveal-back, .reveal-front { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 8px; overflow: hidden; }
+.reveal-back { transform: rotateY(0deg); background: var(--purple); }
+.reveal-front { transform: rotateY(180deg); background: var(--cream); }
+.reveal-back img, .reveal-front > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.reveal-front > img { position: relative; z-index: 1; background: var(--cream); }
+.is-revealed .reveal-inner { transform: rotateY(180deg); }
+.result-art::after { content: ''; position: absolute; inset: -8px; border: 1px solid #F2E0A400; border-radius: 14px; pointer-events: none; opacity: 0; }
+.is-revealing .result-art::after { animation: reveal-aura 1.85s ease-in-out; }
+.result-copy { min-width: 0; }
+.result-copy[aria-hidden="true"] { visibility: hidden; }
+.is-revealed .result-copy { animation: celestial-rise .6s both; }
+.result-card:not(.is-revealed) .result-art { filter: drop-shadow(0 0 9px #A230A432); }
+.result-summary { position: relative; overflow: hidden; }
+.result-summary::after { content: '✧'; position: absolute; right: 23px; top: -25px; font-size: 120px; color: #F2E0A417; pointer-events: none; }
+.reading-language-notice { padding: 18px; margin-top: 22px; background: #CAC5E533; border-radius: 14px; }
+.reading-language-notice p { margin: 0 0 14px; }
+@keyframes comet-pass { 0%,65% { opacity: 0; translate: -40px 20px; } 72% { opacity: .8; } 92%,100% { opacity: 0; translate: 160px -65px; } }
+@keyframes celestial-rise { from { opacity: 0; translate: 0 20px; } to { opacity: 1; translate: 0 0; } }
+@keyframes card-levitate { 0%,100% { transform: translateY(0) rotate(-.8deg); } 50% { transform: translateY(-17px) rotate(.8deg); } }
+@keyframes title-luster { 0%,100% { background-position: 0% center; } 50% { background-position: 100% center; } }
+@keyframes card-luster { 0%,22% { background-position: 140% 0; } 70%,100% { background-position: -140% 0; } }
+@keyframes aura-breathe { 0%,100% { opacity: .55; scale: .94; } 50% { opacity: .95; scale: 1.04; } }
+@keyframes star-breathe { 0%,100% { opacity: .3; scale: .7; } 50% { opacity: .95; scale: 1.12; } }
+@keyframes orbit-luster { from { opacity: .3; } to { opacity: .75; } }
+@keyframes sigil-turn { to { rotate: 360deg; } }
+@keyframes chosen-aura { 0% { box-shadow: 0 0 0 0 #A230A43f; } 100% { box-shadow: 0 0 0 10px transparent; } }
+@keyframes slot-arrival { 0% { filter: drop-shadow(0 0 17px #A230A4); scale: 1.08; } 100% { filter: none; scale: 1; } }
+@keyframes reveal-aura { 0% { opacity: 0; box-shadow: 0 0 0 #A230A4; } 30% { opacity: 1; border-color: #F2E0A4; box-shadow: 0 0 22px #F2E0A4, 0 0 44px #A230A480; } 75% { opacity: .8; box-shadow: 0 0 12px #F2E0A4, 0 0 25px #A230A440; } 100% { opacity: 0; } }
+@media (max-width: 760px) {
+  .result-card .result-art { grid-row: 2; }
+  .result-card > .result-copy { grid-column: 2; grid-row: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .hero h1 em { color: var(--gold); background: none; }
+  .hero-copy > *, .hero-card { opacity: 1; translate: none; }
+}
+@media print {
+  .reveal-inner { transform: rotateY(180deg) !important; }
+  .result-copy[aria-hidden="true"] { visibility: visible; }
+  .reveal-back, .magic-spark, .shuffle-magic, .result-art::after { display: none; }
+}

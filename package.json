@@ -1,0 +1,16 @@
+{
+  "name": "duang-pang",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A portable tarot experience with a local demo and optional AI readings.",
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/server.js",
+    "test": "node --test tests/*.test.js",
+    "export:source": "node scripts/export-source.mjs",
+    "check": "node --check js/app.js && node --check js/config.js && node --check js/deck.js && node --check js/i18n.js && node --check js/reading.js && node --check js/hero.js && node --check js/effects.js && node --check server/server.js && node --check server/validation.js && node --check js/card-text.js"
+  }
+}

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 300" fill="none">
+  <defs>
+    <linearGradient id="velvet" x1="9" y1="3" x2="177" y2="298" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#290087"/><stop offset=".49" stop-color="#481484"/><stop offset="1" stop-color="#220554"/>
+    </linearGradient>
+    <radialGradient id="nebula" cx="0" cy="0" r="1" gradientTransform="translate(90 150) rotate(90) scale(128 90)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A230A4" stop-opacity=".6"/><stop offset="1" stop-color="#A230A4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="18" y1="14" x2="160" y2="286" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2E0A4"/><stop offset=".4" stop-color="#F6FFE9"/><stop offset=".7" stop-color="#D1AF67"/><stop offset="1" stop-color="#F2E0A4"/>
+    </linearGradient>
+    <pattern id="dust" width="28" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="9" r=".6" fill="#F2E0A4" opacity=".36"/>
+      <circle cx="20" cy="25" r=".5" fill="#CAC5E5" opacity=".4"/>
+    </pattern>
+    <path id="spark" d="M0-5 1.25-1.25 5 0 1.25 1.25 0 5-1.25 1.25-5 0-1.25-1.25Z"/>
+  </defs>
+  <rect width="180" height="300" rx="10" fill="url(#velvet)"/>
+  <rect x="1" y="1" width="178" height="298" rx="9" fill="url(#nebula)" stroke="#F2E0A4" stroke-opacity=".8"/>
+  <rect x="7" y="7" width="166" height="286" rx="5" fill="url(#dust)" stroke="url(#gold)" stroke-width=".8"/>
+  <path d="M26 15H154A11 11 0 0 0 165 26V274A11 11 0 0 0 154 285H26A11 11 0 0 0 15 274V26A11 11 0 0 0 26 15Z" stroke="url(#gold)" stroke-width=".55"/>
+  <g stroke="url(#gold)">
+    <path d="M90 31 150 150 90 269 30 150Z" stroke-width=".7"/>
+    <path d="M90 48 140 150 90 252 40 150Z" stroke-width=".45" opacity=".7"/>
+    <ellipse cx="90" cy="150" rx="52" ry="92" stroke-width=".7"/>
+    <ellipse cx="90" cy="150" rx="70" ry="38" transform="rotate(-34 90 150)" stroke-width=".6" opacity=".8"/>
+    <ellipse cx="90" cy="150" rx="70" ry="38" transform="rotate(34 90 150)" stroke-width=".6" opacity=".8"/>
+    <circle cx="90" cy="150" r="38" stroke-width=".8"/>
+    <circle cx="90" cy="150" r="32" stroke-width=".4"/>
+    <path d="M90 109V99M90 191V201M49 150H39M131 150H141M61 121 54 114M119 179 126 186M119 121 126 114M61 179 54 186" stroke-width=".8"/>
+    <path d="M90 121 96 142 117 150 96 158 90 179 84 158 63 150 84 142Z" stroke-width=".8" fill="#F2E0A4" fill-opacity=".09"/>
+    <circle cx="90" cy="150" r="9" stroke-width=".8"/>
+    <path d="M82 150H98M90 142V158" stroke-width=".4"/>
+    <path d="M36 39A12 12 0 1 0 44 59 12 12 0 0 1 36 39ZM144 241A12 12 0 1 0 152 261 12 12 0 0 1 144 241Z" stroke-width=".7" fill="#F2E0A4" fill-opacity=".12"/>
+    <path d="M134 39 137 45 144 46 139 51 140 58 134 55 128 58 129 51 124 46 131 45Z" stroke-width=".6"/>
+    <path d="M46 242 49 248 56 249 51 254 52 261 46 258 40 261 41 254 36 249 43 248Z" stroke-width=".6"/>
+    <path d="M76 26H104M76 274H104" stroke-width=".5"/>
+    <circle cx="90" cy="67" r="3" fill="#F2E0A4"/>
+    <circle cx="90" cy="233" r="3" fill="#F2E0A4"/>
+  </g>
+  <g fill="#F2E0A4">
+    <use href="#spark" transform="translate(29 93) scale(.75)"/>
+    <use href="#spark" transform="translate(151 207) scale(.75)"/>
+    <use href="#spark" transform="translate(145 84) scale(.55)"/>
+    <use href="#spark" transform="translate(35 216) scale(.55)"/>
+    <circle cx="53" cy="79" r="1"/><circle cx="127" cy="221" r="1"/>
+    <circle cx="27" cy="181" r=".8"/><circle cx="153" cy="119" r=".8"/>
+  </g>
+</svg>
