@@ -2,13 +2,14 @@ import { CONFIG, SPREADS, TOPICS } from './config.js';
 import { local } from './i18n.js';
 import { cardText } from './card-text.js';
 
-export async function getServerConfig() {
+/** `reason` tells the UI why it is in demo mode: the server has AI off, or no server answered (e.g. GitHub Pages). */
+export async function getServerConfig({ timeout = 2500 } = {}) {
   try {
-    const response = await fetch(`${CONFIG.apiBase}/config`, { signal: AbortSignal.timeout(2500), cache: 'no-store' });
-    if (!response.ok) return { mode: 'demo' };
+    const response = await fetch(`${CONFIG.apiBase}/config`, { signal: AbortSignal.timeout(timeout), cache: 'no-store' });
+    if (!response.ok) return { mode: 'demo', reason: 'unavailable' };
     const config = await response.json();
-    return { mode: config.mode === 'ai' ? 'ai' : 'demo' };
-  } catch { return { mode: 'demo' }; }
+    return config.mode === 'ai' ? { mode: 'ai' } : { mode: 'demo', reason: 'disabled' };
+  } catch { return { mode: 'demo', reason: 'unavailable' }; }
 }
 
 /** Explicitly a local template demo, never presented as model-generated text. */

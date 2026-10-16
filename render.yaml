@@ -1,0 +1,29 @@
+# Render blueprint for the Duang Pang reading server (https://render.com/docs/blueprint-spec).
+# In Render: New > Blueprint > pick this repository. You will be asked for GEMINI_API_KEY.
+services:
+  - type: web
+    name: duang-pang
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Hosting platforms route traffic to 0.0.0.0, not 127.0.0.1.
+      - key: HOST
+        value: 0.0.0.0
+      # Render's proxy sets X-Forwarded-For, so per-visitor limits see real visitors.
+      - key: TRUST_PROXY
+        value: "1"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
+      # The GitHub Pages site that may call this server.
+      - key: ALLOWED_ORIGINS
+        value: https://078-atithan.github.io
+      - key: READINGS_PER_MINUTE
+        value: "3"
+      - key: DAILY_READING_LIMIT
+        value: "200"

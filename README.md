@@ -172,7 +172,34 @@ The card order must match the submitted IDs. The server independently looks up a
 
 The application does not use analytics, cookies, or persistent browser storage. Profile details, questions, and readings stay in memory. Local demo mode sends none of them to a provider. The optional server does not save reading data or log request bodies. Downloads are created only when requested by the user.
 
-The server intentionally binds to **127.0.0.1** and permits only loopback Host headers. It protects private files with a static-file allowlist, checks request origins, enforces a small in-memory AI request limit, and never returns provider error bodies. It is a local development server, not a public multi-user production backend. Before public hosting, add authentication, HTTPS, durable rate limits, spending controls, and hosting-specific secrets management. Publish only `index.html`, `css/`, `js/`, and `assets/` for a static demo; do not upload `.env`.
+By default the server binds to **127.0.0.1** and permits only loopback Host headers. It protects private files with a static-file allowlist, checks request origins, enforces in-memory AI request limits, and never returns provider error bodies. Do not upload `.env`.
+
+## Hosting
+
+The same code supports three setups. Nothing changes for local use: `npm start` with a `.env` file works as before.
+
+| Setup | Where the page is | Where AI readings come from |
+| --- | --- | --- |
+| Local | `http://127.0.0.1:4173` from `npm start` | The server on your computer |
+| Static demo | GitHub Pages | None. A banner says the site is in demo mode |
+| Static site + hosted server | GitHub Pages | A server deployed on Render (or similar) |
+
+The page decides in `js/config.js`: when opened on this computer it always uses the local `/api`. Anywhere else it uses `REMOTE_API_BASE`, or stays in demo mode while that is empty. If the hosted server does not answer (a free Render service sleeps and takes up to a minute to wake), the page shows a banner, keeps checking for about two minutes, and switches to AI as soon as the server responds.
+
+### Deploy the reading server on Render
+
+1. Push this repository to GitHub.
+2. In Render, choose **New → Blueprint** and select the repository. `render.yaml` configures the service; enter your `GEMINI_API_KEY` when asked. Never commit the key.
+3. When the service is live, note its address, for example `https://duang-pang.onrender.com`, and check that `https://duang-pang.onrender.com/api/config` returns `{"mode":"ai"}`.
+4. In `js/config.js`, set `REMOTE_API_BASE` to that address followed by `/api`, then commit and push. GitHub Pages redeploys and the Pages site now creates AI readings.
+
+To use another host, set the same environment variables: `HOST=0.0.0.0`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `ALLOWED_ORIGINS` (your Pages origin), `ALLOWED_HOSTS` (the server's public hostname; Render's is added automatically) and `TRUST_PROXY=1` behind the platform's proxy.
+
+### Protection on a public server
+
+- **Allowlists:** only `ALLOWED_HOSTS` (plus loopback) are served, and only same-origin pages or `ALLOWED_ORIGINS` may request readings. CORS headers are sent only to allowed origins.
+- **Limits:** `READINGS_PER_MINUTE` per visitor, `MAX_CONCURRENT_READINGS` at once, and `DAILY_READING_LIMIT` in total per day (default 200). The daily cap is the main spending control, because a visitor can fake their address.
+- **Limitations:** limits are kept in memory, so they reset when the server restarts and apply per instance. There is no user login. Anyone who finds the site can use the daily allowance. For wider use, add authentication and durable limits, and set a budget alert in Google Cloud for the Gemini key.
 
 ## Verification
 

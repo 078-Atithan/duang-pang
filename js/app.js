@@ -24,7 +24,7 @@ const positions = () => local(spread().positions);
 const announce = (message) => { $('#announcement').textContent = message; };
 const motionLocked = () => state.busy || ['shuffling', 'drawing'].includes(state.phase);
 const actionButton = (action, text, variant = 'button-dark', extra = '') => `<button type="button" class="button ${variant}" data-action="${action}" ${extra}>${text}</button>`;
-const ERROR_KEYS = { quota: 'errorQuota', busy: 'errorBusy', rate_limit: 'errorRateLimit', timeout: 'errorTimeout', incomplete: 'errorIncomplete', blocked: 'errorBlocked', network: 'errorNetwork', config: 'errorConfig' };
+const ERROR_KEYS = { quota: 'errorQuota', daily_limit: 'errorQuota', busy: 'errorBusy', rate_limit: 'errorRateLimit', timeout: 'errorTimeout', incomplete: 'errorIncomplete', blocked: 'errorBlocked', network: 'errorNetwork', config: 'errorConfig' };
 const errorText = (code) => label(ERROR_KEYS[code] || 'readingError');
 
 // Runs after the final re-render so layout changes above #results cannot cut the scroll short.
@@ -92,8 +92,26 @@ function renderWizard({ focus = false } = {}) {
   renderStepper();
   $('#language-toggle').disabled = motionLocked();
   $('#wizard').setAttribute('aria-busy', String(motionLocked()));
-  $('#wizard').innerHTML = [renderTopic, renderQuestion, renderSpread, renderDetails, renderDraw][state.step]();
+  $('#wizard').innerHTML = modeBanner() + [renderTopic, renderQuestion, renderSpread, renderDetails, renderDraw][state.step]();
   if (focus) $('#step-title')?.focus({ preventScroll: true });
+}
+
+// Say plainly when no reading server answered, so a static copy (GitHub Pages) is not mistaken for AI.
+function modeBanner() {
+  if (serverConfig.mode !== 'demo' || serverConfig.reason !== 'unavailable') return '';
+  return `<p class="mode-bar mode-banner" role="status"><span aria-hidden="true">✧</span>${label(CONFIG.remoteApi ? 'remoteDownBanner' : 'staticDemoBanner')}</p>`;
+}
+
+// A hosted server on a free plan can take a minute to wake up; keep checking and switch to AI once it answers.
+async function watchRemoteServer() {
+  for (let attempt = 0; attempt < 12 && serverConfig.mode !== 'ai'; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    const config = await getServerConfig({ timeout: 8000 });
+    if (config.mode === 'demo' && config.reason === 'unavailable') continue;
+    serverConfig = config;
+    if (!motionLocked() && state.phase === 'stacked' && !state.result) renderWizard();
+    return;
+  }
 }
 
 function clearDraw() {
@@ -371,11 +389,12 @@ async function initialize() {
   $('#wizard').innerHTML = `<p class="loading-message">${label('loading')}</p>`;
   try {
     const [deckResponse, config] = await Promise.all([
-      fetch(CONFIG.deckUrl, { signal: AbortSignal.timeout(10000) }), getServerConfig(),
+      fetch(CONFIG.deckUrl, { signal: AbortSignal.timeout(10000) }), getServerConfig({ timeout: CONFIG.remoteApi ? 5000 : 2500 }),
     ]);
     if (!deckResponse.ok) throw new Error('Deck could not be loaded');
     deck = validateDeck(await deckResponse.json()); serverConfig = config;
     renderWizard();
+    if (CONFIG.remoteApi && config.reason === 'unavailable') watchRemoteServer();
   } catch {
     $('#wizard').setAttribute('aria-busy', 'false');
     $('#wizard').innerHTML = `<p class="error-message" role="alert">${label('deckError')}</p><div class="result-actions">${actionButton('retry', label('retry'))}</div>`;

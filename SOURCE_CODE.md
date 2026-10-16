@@ -541,6 +541,7 @@ input::placeholder, textarea::placeholder { color: #857990; }
 .status-message { margin-top: 16px; font-size: 13px; color: var(--muted); text-align: center; }
 .error-message { color: var(--error); background: #fff0f2; border-radius: 8px; padding: 12px 16px; margin-top: 15px; font-size: 13px; }
 .mode-bar { display: flex; align-items: flex-start; gap: 9px; padding: 14px 17px; background: #faf2d9; border: 1px solid #f0dfad; border-radius: 8px; font-size: 12px; color: #756027; margin-top: 17px; }
+.mode-banner { margin: 0 0 22px; }
 .consent { display: flex; gap: 10px; align-items: flex-start; margin-top: 17px; font-size: 13px; }
 .consent input { margin-top: 5px; accent-color: var(--purple); }
 .results-section { padding-block: 70px 78px; }
@@ -779,7 +780,7 @@ const positions = () => local(spread().positions);
 const announce = (message) => { $('#announcement').textContent = message; };
 const motionLocked = () => state.busy || ['shuffling', 'drawing'].includes(state.phase);
 const actionButton = (action, text, variant = 'button-dark', extra = '') => `<button type="button" class="button ${variant}" data-action="${action}" ${extra}>${text}</button>`;
-const ERROR_KEYS = { quota: 'errorQuota', busy: 'errorBusy', rate_limit: 'errorRateLimit', timeout: 'errorTimeout', incomplete: 'errorIncomplete', blocked: 'errorBlocked', network: 'errorNetwork', config: 'errorConfig' };
+const ERROR_KEYS = { quota: 'errorQuota', daily_limit: 'errorQuota', busy: 'errorBusy', rate_limit: 'errorRateLimit', timeout: 'errorTimeout', incomplete: 'errorIncomplete', blocked: 'errorBlocked', network: 'errorNetwork', config: 'errorConfig' };
 const errorText = (code) => label(ERROR_KEYS[code] || 'readingError');
 
 // Runs after the final re-render so layout changes above #results cannot cut the scroll short.
@@ -847,8 +848,26 @@ function renderWizard({ focus = false } = {}) {
   renderStepper();
   $('#language-toggle').disabled = motionLocked();
   $('#wizard').setAttribute('aria-busy', String(motionLocked()));
-  $('#wizard').innerHTML = [renderTopic, renderQuestion, renderSpread, renderDetails, renderDraw][state.step]();
+  $('#wizard').innerHTML = modeBanner() + [renderTopic, renderQuestion, renderSpread, renderDetails, renderDraw][state.step]();
   if (focus) $('#step-title')?.focus({ preventScroll: true });
+}
+
+// Say plainly when no reading server answered, so a static copy (GitHub Pages) is not mistaken for AI.
+function modeBanner() {
+  if (serverConfig.mode !== 'demo' || serverConfig.reason !== 'unavailable') return '';
+  return `<p class="mode-bar mode-banner" role="status"><span aria-hidden="true">✧</span>${label(CONFIG.remoteApi ? 'remoteDownBanner' : 'staticDemoBanner')}</p>`;
+}
+
+// A hosted server on a free plan can take a minute to wake up; keep checking and switch to AI once it answers.
+async function watchRemoteServer() {
+  for (let attempt = 0; attempt < 12 && serverConfig.mode !== 'ai'; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    const config = await getServerConfig({ timeout: 8000 });
+    if (config.mode === 'demo' && config.reason === 'unavailable') continue;
+    serverConfig = config;
+    if (!motionLocked() && state.phase === 'stacked' && !state.result) renderWizard();
+    return;
+  }
 }
 
 function clearDraw() {
@@ -1126,11 +1145,12 @@ async function initialize() {
   $('#wizard').innerHTML = `<p class="loading-message">${label('loading')}</p>`;
   try {
     const [deckResponse, config] = await Promise.all([
-      fetch(CONFIG.deckUrl, { signal: AbortSignal.timeout(10000) }), getServerConfig(),
+      fetch(CONFIG.deckUrl, { signal: AbortSignal.timeout(10000) }), getServerConfig({ timeout: CONFIG.remoteApi ? 5000 : 2500 }),
     ]);
     if (!deckResponse.ok) throw new Error('Deck could not be loaded');
     deck = validateDeck(await deckResponse.json()); serverConfig = config;
     renderWizard();
+    if (CONFIG.remoteApi && config.reason === 'unavailable') watchRemoteServer();
   } catch {
     $('#wizard').setAttribute('aria-busy', 'false');
     $('#wizard').innerHTML = `<p class="error-message" role="alert">${label('deckError')}</p><div class="result-actions">${actionButton('retry', label('retry'))}</div>`;
@@ -1239,11 +1259,20 @@ export function cardText(card, language = 'en') {
 
 ````javascript
 // Public configuration only. API keys belong in the server's environment.
+
+// The deployed reading server, used when the page is opened anywhere other than this computer
+// (e.g. GitHub Pages). Example: 'https://duang-pang.onrender.com/api'. Leave '' for demo-only static hosting.
+const REMOTE_API_BASE = '';
+// This module is also loaded by the Node server, where `location` does not exist.
+const onThisComputer = typeof location === 'undefined' || /^(?:localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+const useRemote = !onThisComputer && Boolean(REMOTE_API_BASE);
+
 export const CONFIG = Object.freeze({
   deckUrl: './assets/data/tarot-images.json',
   imageDirectory: './assets/images/tarot/',
   cardBack: './assets/card-back.svg',
-  apiBase: '/api',
+  apiBase: useRemote ? REMOTE_API_BASE.replace(/\/+$/, '') : '/api',
+  remoteApi: useRemote,
   maxQuestionLength: 1000,
 });
 
@@ -1746,6 +1775,8 @@ const COPY = {
   reveal: ['Reveal my reading', 'เปิดผลการอ่านไพ่'],
   viewReading: ['View my reading', 'ดูผลการอ่านไพ่'],
   revealing: ['Preparing your reflection…', 'กำลังเตรียมผลการอ่านไพ่…'],
+  staticDemoBanner: ['Demo mode · This site runs without the AI reading server, so readings are assembled on your device from the card meanings.', 'โหมดสาธิต · เว็บไซต์นี้ทำงานโดยไม่มีเซิร์ฟเวอร์อ่านไพ่ด้วย AI คำอ่านจะสร้างจากความหมายของไพ่บนอุปกรณ์ของคุณ'],
+  remoteDownBanner: ['AI readings are unavailable right now. The reading server may be starting up; until it responds, readings use the on-device demo.', 'ขณะนี้ยังใช้การอ่านไพ่ด้วย AI ไม่ได้ เซิร์ฟเวอร์อาจกำลังเริ่มทำงาน ระหว่างนี้คำอ่านจะใช้โหมดสาธิตบนอุปกรณ์'],
   waitingAi: ['Reading your cards… this usually takes 10–20 seconds.', 'กำลังอ่านไพ่ของคุณ… โดยปกติใช้เวลาประมาณ 10–20 วินาที'],
   errorQuota: ['The AI has reached its usage limit for now. Please try again later. Your selected cards are kept, or you can use the local demo.', 'ขณะนี้ AI ใช้งานถึงขีดจำกัดแล้ว กรุณาลองใหม่ภายหลัง ไพ่ที่เลือกยังอยู่ หรือจะใช้โหมดสาธิตในเครื่องก็ได้'],
   errorBusy: ['The AI service is very busy right now. Please try again in a moment. Your selected cards are kept.', 'ขณะนี้บริการ AI มีผู้ใช้งานจำนวนมาก กรุณาลองใหม่อีกครั้งในอีกสักครู่ ไพ่ที่เลือกยังอยู่'],
@@ -1753,7 +1784,7 @@ const COPY = {
   errorTimeout: ['The AI took too long to respond. Please try again. Your selected cards are kept.', 'AI ใช้เวลาตอบนานเกินไป กรุณาลองใหม่อีกครั้ง ไพ่ที่เลือกยังอยู่'],
   errorIncomplete: ['The reading was cut off before it finished. Please try again.', 'คำอ่านถูกตัดก่อนจะเสร็จสมบูรณ์ กรุณาลองใหม่อีกครั้ง'],
   errorBlocked: ['The AI couldn’t interpret this question. Try rephrasing it, or use the local demo.', 'AI ไม่สามารถตีความคำถามนี้ได้ ลองเรียบเรียงคำถามใหม่ หรือใช้โหมดสาธิตในเครื่อง'],
-  errorNetwork: ['Couldn’t reach the reading server. Check that it is still running (npm start), then try again.', 'ติดต่อเซิร์ฟเวอร์อ่านไพ่ไม่ได้ ตรวจสอบว่าเซิร์ฟเวอร์ยังทำงานอยู่ (npm start) แล้วลองใหม่'],
+  errorNetwork: ['Couldn’t reach the reading server. Check your connection (or, if you run the server yourself, that npm start is still running), then try again.', 'ติดต่อเซิร์ฟเวอร์อ่านไพ่ไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต (หรือหากรันเซิร์ฟเวอร์เอง ตรวจสอบว่า npm start ยังทำงานอยู่) แล้วลองใหม่'],
   errorConfig: ['The AI service isn’t set up correctly. Check the API key and model in .env. You can use the local demo meanwhile.', 'ตั้งค่าบริการ AI ไม่ถูกต้อง ตรวจสอบ API key และ model ในไฟล์ .env ระหว่างนี้ใช้โหมดสาธิตในเครื่องได้'],
   demoNotice: ['Local demo · Reflections are assembled from your card data and topic. No AI request is made.', 'โหมดสาธิตในเครื่อง · สร้างข้อความจากข้อมูลไพ่และหัวข้อ โดยไม่เรียกใช้ AI'],
   aiNotice: ['AI reading · Your cards and context are used to create a new interpretation.', 'อ่านไพ่ด้วย AI · ใช้ไพ่และบริบทของคุณสร้างคำอ่านเฉพาะครั้งนี้'],
@@ -1778,7 +1809,7 @@ const COPY = {
   dateError: ['Choose a valid date of birth that is not in the future.', 'กรุณาระบุวันเกิดที่ถูกต้องและไม่อยู่ในอนาคต'],
   fieldTooLong: ['Please shorten this field.', 'กรุณาย่อข้อความให้สั้นลง'],
   aboutDialog: ['Duang Pang is a quiet space for self-reflection through tarot. Choose a topic, share context if you wish, and draw your own spread. Local demo readings use the supplied 78-card dataset. When configured, AI readings create a new interpretation from your chosen cards and context.', 'ดวงปังเป็นพื้นที่สงบสำหรับทบทวนตัวเองผ่านไพ่ทาโรต์ เลือกหัวข้อ เล่าบริบทตามสะดวก และเลือกไพ่ด้วยตัวเอง โหมดสาธิตใช้ชุดข้อมูล 78 ใบ เมื่อเปิดใช้ AI ระบบจะสร้างคำอ่านใหม่จากไพ่และบริบทของคุณ'],
-  privacyDialog: ['We do not use analytics, cookies, or persistent storage for readings. In local demo mode, your question and details stay in your browser memory.\n\nIn AI mode, after you consent, your question, selected cards, and only your age (calculated from your birth date), gender, relationship status, and occupation are sent through the local server to Google Gemini. Your name and birth date are never sent. The server does not save readings or log personal details. Google’s Gemini API data policies apply.\n\nA downloaded reading is saved on your device. Refreshing the page clears the current reading.', 'เราไม่ใช้ระบบวิเคราะห์ คุกกี้ หรือพื้นที่เก็บข้อมูลถาวรสำหรับคำอ่าน ในโหมดสาธิต คำถามและรายละเอียดจะอยู่ในหน่วยความจำของเบราว์เซอร์\n\nในโหมด AI หลังคุณยินยอม คำถาม ไพ่ที่เลือก และเฉพาะอายุ (คำนวณจากวันเกิด) เพศ สถานะความสัมพันธ์ และอาชีพ จะส่งผ่านเซิร์ฟเวอร์ในเครื่องไปยัง Google Gemini โดยไม่ส่งชื่อและวันเกิด เซิร์ฟเวอร์ไม่บันทึกคำอ่านหรือข้อมูลส่วนตัว นโยบายข้อมูลของ Gemini API ของ Google มีผลบังคับใช้\n\nไฟล์ที่ดาวน์โหลดจะอยู่ในอุปกรณ์ของคุณ การรีเฟรชหน้าจะล้างคำอ่านปัจจุบัน'],
+  privacyDialog: ['We do not use analytics, cookies, or persistent storage for readings. In local demo mode, your question and details stay in your browser memory.\n\nIn AI mode, after you consent, your question, selected cards, and only your age (calculated from your birth date), gender, relationship status, and occupation are sent through the reading server to Google Gemini. Your name and birth date are never sent. The server does not save readings or log personal details. Google’s Gemini API data policies apply.\n\nA downloaded reading is saved on your device. Refreshing the page clears the current reading.', 'เราไม่ใช้ระบบวิเคราะห์ คุกกี้ หรือพื้นที่เก็บข้อมูลถาวรสำหรับคำอ่าน ในโหมดสาธิต คำถามและรายละเอียดจะอยู่ในหน่วยความจำของเบราว์เซอร์\n\nในโหมด AI หลังคุณยินยอม คำถาม ไพ่ที่เลือก และเฉพาะอายุ (คำนวณจากวันเกิด) เพศ สถานะความสัมพันธ์ และอาชีพ จะส่งผ่านเซิร์ฟเวอร์อ่านไพ่ไปยัง Google Gemini โดยไม่ส่งชื่อและวันเกิด เซิร์ฟเวอร์ไม่บันทึกคำอ่านหรือข้อมูลส่วนตัว นโยบายข้อมูลของ Gemini API ของ Google มีผลบังคับใช้\n\nไฟล์ที่ดาวน์โหลดจะอยู่ในอุปกรณ์ของคุณ การรีเฟรชหน้าจะล้างคำอ่านปัจจุบัน'],
   disclaimerDialog: ['Tarot is a tool for reflection and entertainment. It cannot establish facts, reveal another person’s private thoughts, diagnose health conditions, or guarantee future events.\n\nConsider the cards as prompts, not instructions. Use qualified professional support for medical, financial, or legal decisions. Your choices and circumstances matter more than a spread.', 'ไพ่ทาโรต์เป็นเครื่องมือสำหรับทบทวนตัวเองและความบันเทิง ไม่สามารถยืนยันข้อเท็จจริง เปิดเผยความคิดของผู้อื่น วินิจฉัยโรค หรือรับประกันอนาคตได้\n\nใช้ไพ่เป็นคำถามชวนคิด ไม่ใช่คำสั่ง การตัดสินใจด้านสุขภาพ การเงิน หรือกฎหมายควรใช้ข้อมูลและความช่วยเหลือจากผู้เชี่ยวชาญ ทางเลือกและสถานการณ์จริงของคุณสำคัญกว่าผลไพ่'],
 };
 
@@ -1807,13 +1838,14 @@ import { CONFIG, SPREADS, TOPICS } from './config.js';
 import { local } from './i18n.js';
 import { cardText } from './card-text.js';
 
-export async function getServerConfig() {
+/** `reason` tells the UI why it is in demo mode: the server has AI off, or no server answered (e.g. GitHub Pages). */
+export async function getServerConfig({ timeout = 2500 } = {}) {
   try {
-    const response = await fetch(`${CONFIG.apiBase}/config`, { signal: AbortSignal.timeout(2500), cache: 'no-store' });
-    if (!response.ok) return { mode: 'demo' };
+    const response = await fetch(`${CONFIG.apiBase}/config`, { signal: AbortSignal.timeout(timeout), cache: 'no-store' });
+    if (!response.ok) return { mode: 'demo', reason: 'unavailable' };
     const config = await response.json();
-    return { mode: config.mode === 'ai' ? 'ai' : 'demo' };
-  } catch { return { mode: 'demo' }; }
+    return config.mode === 'ai' ? { mode: 'ai' } : { mode: 'demo', reason: 'disabled' };
+  } catch { return { mode: 'demo', reason: 'unavailable' }; }
 }
 
 /** Explicitly a local template demo, never presented as model-generated text. */
@@ -5388,28 +5420,73 @@ export async function generateAiReading(payload, { apiKey, model, fetchImpl = fe
   } catch { throw new RequestError('The AI response did not match the chosen cards', 502, 'invalid_response'); }
 }
 
-export function createAppServer({ apiKey = process.env.GEMINI_API_KEY || '', model = process.env.GEMINI_MODEL || '', fetchImpl = fetch } = {}) {
+const LOOPBACK_HOST = /^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/;
+const list = (value = '') => value.split(',').map((item) => item.trim().toLowerCase().replace(/\/+$/, '')).filter(Boolean);
+const limit = (value, fallback) => (value === undefined || value === '' ? fallback : Math.max(0, Number(value) || 0));
+const hostOf = (origin) => { try { return new URL(origin).host.toLowerCase(); } catch { return ''; } };
+
+export function createAppServer({
+  apiKey = process.env.GEMINI_API_KEY || '',
+  model = process.env.GEMINI_MODEL || '',
+  fetchImpl = fetch,
+  // Sites allowed to call the API from another origin, e.g. https://078-atithan.github.io
+  allowedOrigins = list(process.env.ALLOWED_ORIGINS),
+  // Public hostnames this server answers to (loopback is always allowed). Render provides its own hostname.
+  allowedHosts = [...list(process.env.ALLOWED_HOSTS), ...list(process.env.RENDER_EXTERNAL_HOSTNAME)],
+  readingsPerMinute = limit(process.env.READINGS_PER_MINUTE, 5),
+  dailyLimit = limit(process.env.DAILY_READING_LIMIT, 200),
+  maxConcurrent = limit(process.env.MAX_CONCURRENT_READINGS, 2),
+  // Only behind a proxy you control (Render, Cloud Run...) does X-Forwarded-For identify the visitor.
+  trustProxy = process.env.TRUST_PROXY === '1',
+  now = () => Date.now(),
+} = {}) {
   const aiEnabled = Boolean(apiKey && model);
-  // Loopback-only hosting, origin checks and a small limit protect a local API key.
-  // Add real authentication, durable rate limits and a budget before public hosting.
-  let rateWindowStart = 0; let requestCount = 0; let activeReadings = 0;
+  // Host and origin allowlists, per-visitor and daily limits protect the API key and its quota.
+  // Limits are in memory: they reset on restart and are per server instance.
+  const visitors = new Map();
+  let day = ''; let dayCount = 0; let activeReadings = 0;
+  const visitorId = (request) => (trustProxy && request.headers['x-forwarded-for']?.split(',')[0].trim()) || request.socket.remoteAddress || 'unknown';
+  const takeVisitorSlot = (id) => {
+    const time = now();
+    if (visitors.size > 5000) for (const [key, entry] of visitors) if (time - entry.start > 60000) visitors.delete(key);
+    const entry = visitors.get(id);
+    if (!entry || time - entry.start > 60000) { visitors.set(id, { start: time, count: 1 }); return true; }
+    if (entry.count >= readingsPerMinute) return false;
+    entry.count += 1; return true;
+  };
+
   return http.createServer(async (request, response) => {
+    let cors = {};
     try {
-      const host = request.headers.host || '';
-      if (!/^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)) throw new RequestError('Invalid host', 403);
+      const host = (request.headers.host || '').toLowerCase();
+      if (!LOOPBACK_HOST.test(host) && !allowedHosts.includes(host.replace(/:\d+$/, ''))) throw new RequestError('Invalid host', 403);
       const url = new URL(request.url, `http://${host}`);
-      if (request.method === 'GET' && url.pathname === '/api/config') return json(response, 200, { mode: aiEnabled ? 'ai' : 'demo' });
+      const origin = request.headers.origin?.toLowerCase().replace(/\/+$/, '');
+      const sameOrigin = Boolean(origin) && hostOf(origin) === host;
+      const allowedCrossOrigin = Boolean(origin) && !sameOrigin && allowedOrigins.includes(origin);
+      if (allowedCrossOrigin && url.pathname.startsWith('/api/')) cors = { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' };
+
+      if (request.method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
+        if (!allowedCrossOrigin) throw new RequestError('Cross-origin requests are not allowed', 403);
+        response.writeHead(204, { ...SAFE_HEADERS, ...cors, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600' });
+        return response.end();
+      }
+      if (request.method === 'GET' && url.pathname === '/api/config') return json(response, 200, { mode: aiEnabled ? 'ai' : 'demo' }, cors);
       if (url.pathname === '/api/reading') {
-        if (request.method !== 'POST') return json(response, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
-        if (request.headers.origin && request.headers.origin !== `http://${host}`) throw new RequestError('Cross-origin requests are not allowed', 403);
-        if (request.headers['sec-fetch-site'] === 'cross-site') throw new RequestError('Cross-site requests are not allowed', 403);
+        if (request.method !== 'POST') return json(response, 405, { error: 'Method not allowed' }, { ...cors, Allow: 'POST' });
+        if (origin && !sameOrigin && !allowedCrossOrigin) throw new RequestError('Cross-origin requests are not allowed', 403);
+        if (!origin && request.headers['sec-fetch-site'] === 'cross-site') throw new RequestError('Cross-site requests are not allowed', 403);
         const payload = validatePayload(await readJson(request), deck);
         if (!aiEnabled) throw new RequestError('AI is not configured. Use the local demo.', 503, 'config');
         if (!payload.consent) throw new RequestError('Consent is required before sending data to the provider', 400);
-        if (Date.now() - rateWindowStart > 60000) { rateWindowStart = Date.now(); requestCount = 0; }
-        if (requestCount >= 5 || activeReadings >= 2) return json(response, 429, { error: 'Please wait before trying another reading', code: 'rate_limit' }, { 'Retry-After': '60' });
-        requestCount += 1; activeReadings += 1;
-        try { return json(response, 200, await generateAiReading(payload, { apiKey, model, fetchImpl })); }
+        const today = new Date(now()).toISOString().slice(0, 10);
+        if (today !== day) { day = today; dayCount = 0; }
+        if (dailyLimit && dayCount >= dailyLimit) throw new RequestError('The daily reading limit has been reached', 503, 'daily_limit');
+        if (activeReadings >= maxConcurrent || !takeVisitorSlot(visitorId(request))) {
+          return json(response, 429, { error: 'Please wait before trying another reading', code: 'rate_limit' }, { ...cors, 'Retry-After': '60' });
+        }
+        dayCount += 1; activeReadings += 1;
+        try { return json(response, 200, await generateAiReading(payload, { apiKey, model, fetchImpl }), cors); }
         finally { activeReadings -= 1; }
       }
       if (!['GET', 'HEAD'].includes(request.method)) return json(response, 405, { error: 'Method not allowed' }, { Allow: 'GET, HEAD' });
@@ -5418,7 +5495,7 @@ export function createAppServer({ apiKey = process.env.GEMINI_API_KEY || '', mod
       const timedOut = error.name === 'TimeoutError';
       const status = error instanceof RequestError ? error.status : timedOut ? 504 : 500;
       const code = error instanceof RequestError ? error.code : timedOut ? 'timeout' : undefined;
-      if (!response.headersSent) json(response, status, { error: error instanceof RequestError ? error.message : timedOut ? 'The AI took too long to respond' : 'The request could not be completed', ...(code ? { code } : {}) });
+      if (!response.headersSent) json(response, status, { error: error instanceof RequestError ? error.message : timedOut ? 'The AI took too long to respond' : 'The request could not be completed', ...(code ? { code } : {}) }, cors);
       else response.end();
     }
   });
@@ -5427,11 +5504,18 @@ export function createAppServer({ apiKey = process.env.GEMINI_API_KEY || '', mod
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT || 4173);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be between 1 and 65535');
+  // 127.0.0.1 keeps the server private to this computer; hosting platforms need HOST=0.0.0.0.
+  const bindHost = process.env.HOST || '127.0.0.1';
+  const publicHosts = [...list(process.env.ALLOWED_HOSTS), ...list(process.env.RENDER_EXTERNAL_HOSTNAME)];
   const server = createAppServer();
   server.requestTimeout = 70000;
-  server.listen(port, '127.0.0.1', () => {
-    console.log(`Duang Pang: http://127.0.0.1:${port}`);
+  server.listen(port, bindHost, () => {
+    console.log(`Duang Pang: http://${bindHost === '0.0.0.0' ? '127.0.0.1' : bindHost}:${port}`);
     console.log(`Reading mode: ${process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL ? 'AI (consent required)' : 'Local demo'}`);
+    if (!LOOPBACK_HOST.test(bindHost)) {
+      console.log(`Public hostnames: ${publicHosts.join(', ') || 'none'} · Allowed origins: ${list(process.env.ALLOWED_ORIGINS).join(', ') || 'none'}`);
+      if (!publicHosts.length) console.warn('Warning: set ALLOWED_HOSTS to this server\'s public hostname, or every public request is rejected.');
+    }
   });
   server.on('error', (error) => { console.error(error.code === 'EADDRINUSE' ? 'This port is already in use. Set a different PORT.' : 'The local server could not start.'); process.exitCode = 1; });
 }
@@ -5981,6 +6065,7 @@ try {
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import http from 'node:http';
 import { validateDeck, shuffle, availableCards } from '../js/deck.js';
 import { createDemoReading, validateReading } from '../js/reading.js';
 import { cardText } from '../js/card-text.js';
@@ -6130,6 +6215,52 @@ test('HTTP server serves assets, protects private files, enforces origin and con
   assert.equal(limited.status, 429);
   assert.equal((await limited.json()).code, 'rate_limit');
   assert.equal((await get('/api/reading')).status, 405);
+});
+
+test('hosted mode: host and origin allowlists, CORS, per-visitor and daily limits', async (context) => {
+  let providerCalls = 0;
+  const pages = 'https://078-atithan.github.io';
+  const server = createAppServer({
+    apiKey: 'private-test-key', model: 'test', allowedOrigins: [pages], allowedHosts: ['reading.example.com'],
+    readingsPerMinute: 2, dailyLimit: 3, trustProxy: true,
+    fetchImpl: async () => { providerCalls += 1; return providerResponse(geminiResponse(JSON.stringify(responseFixture()))); },
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  context.after(() => new Promise((resolve) => { server.closeAllConnections(); server.close(resolve); }));
+  const port = server.address().port;
+  // fetch() forbids overriding Host, so use node:http for hosted-style requests.
+  const call = (method, pathname, headers = {}, body) => new Promise((resolve, reject) => {
+    const request = http.request({ host: '127.0.0.1', port, method, path: pathname, headers: { Host: 'reading.example.com', ...headers } }, (response) => {
+      let text = ''; response.on('data', (chunk) => { text += chunk; });
+      response.on('end', () => resolve({ status: response.statusCode, headers: response.headers, body: text ? JSON.parse(text) : null }));
+    });
+    request.on('error', reject); request.end(body);
+  });
+  const read = (visitor, origin = pages) => call('POST', '/api/reading', { Origin: origin, 'Content-Type': 'application/json', 'X-Forwarded-For': visitor }, JSON.stringify(payload()));
+
+  assert.equal((await call('GET', '/api/config', { Host: 'evil.example' })).status, 403, 'Unknown hosts are rejected');
+  const config = await call('GET', '/api/config', { Origin: pages });
+  assert.equal(config.headers['access-control-allow-origin'], pages);
+  assert.deepEqual(config.body, { mode: 'ai' });
+  const preflight = await call('OPTIONS', '/api/reading', { Origin: pages, 'Access-Control-Request-Method': 'POST' });
+  assert.equal(preflight.status, 204);
+  assert.match(preflight.headers['access-control-allow-methods'], /POST/);
+  assert.equal((await call('OPTIONS', '/api/reading', { Origin: 'https://unrelated.example' })).status, 403);
+  const blocked = await read('1.1.1.1', 'https://unrelated.example');
+  assert.equal(blocked.status, 403);
+  assert.equal(blocked.headers['access-control-allow-origin'], undefined);
+
+  assert.equal((await read('1.1.1.1')).status, 200);
+  assert.equal((await read('1.1.1.1')).status, 200);
+  const limited = await read('1.1.1.1');
+  assert.equal(limited.status, 429);
+  assert.equal(limited.body.code, 'rate_limit');
+  assert.equal(limited.headers['access-control-allow-origin'], pages, 'Errors stay readable by the allowed site');
+  assert.equal((await read('2.2.2.2')).status, 200, 'Another visitor has their own allowance');
+  const capped = await read('3.3.3.3');
+  assert.equal(capped.status, 503);
+  assert.equal(capped.body.code, 'daily_limit');
+  assert.equal(providerCalls, 3);
 });
 ````
 
@@ -6532,6 +6663,21 @@ GEMINI_API_KEY=
 # A Gemini model that supports structured JSON output, e.g. gemini-flash-latest
 GEMINI_MODEL=
 PORT=4173
+
+# --- Hosting the server publicly (optional; leave as-is for local use) ---
+# Bind address. 127.0.0.1 keeps the server private to this computer; hosts need 0.0.0.0.
+HOST=127.0.0.1
+# Public hostname(s) of this server, comma-separated, e.g. duang-pang.onrender.com
+# (Render's own hostname is added automatically.)
+ALLOWED_HOSTS=
+# Other sites allowed to call the API, comma-separated, e.g. https://078-atithan.github.io
+ALLOWED_ORIGINS=
+# Set to 1 only behind a hosting proxy (Render, Cloud Run, ...), so limits apply per visitor.
+TRUST_PROXY=
+# Limits: readings per visitor per minute, total AI readings per day (0 = no daily cap), parallel readings.
+READINGS_PER_MINUTE=5
+DAILY_READING_LIMIT=200
+MAX_CONCURRENT_READINGS=2
 ````
 
 ## .gitignore
@@ -6725,7 +6871,34 @@ The card order must match the submitted IDs. The server independently looks up a
 
 The application does not use analytics, cookies, or persistent browser storage. Profile details, questions, and readings stay in memory. Local demo mode sends none of them to a provider. The optional server does not save reading data or log request bodies. Downloads are created only when requested by the user.
 
-The server intentionally binds to **127.0.0.1** and permits only loopback Host headers. It protects private files with a static-file allowlist, checks request origins, enforces a small in-memory AI request limit, and never returns provider error bodies. It is a local development server, not a public multi-user production backend. Before public hosting, add authentication, HTTPS, durable rate limits, spending controls, and hosting-specific secrets management. Publish only `index.html`, `css/`, `js/`, and `assets/` for a static demo; do not upload `.env`.
+By default the server binds to **127.0.0.1** and permits only loopback Host headers. It protects private files with a static-file allowlist, checks request origins, enforces in-memory AI request limits, and never returns provider error bodies. Do not upload `.env`.
+
+## Hosting
+
+The same code supports three setups. Nothing changes for local use: `npm start` with a `.env` file works as before.
+
+| Setup | Where the page is | Where AI readings come from |
+| --- | --- | --- |
+| Local | `http://127.0.0.1:4173` from `npm start` | The server on your computer |
+| Static demo | GitHub Pages | None. A banner says the site is in demo mode |
+| Static site + hosted server | GitHub Pages | A server deployed on Render (or similar) |
+
+The page decides in `js/config.js`: when opened on this computer it always uses the local `/api`. Anywhere else it uses `REMOTE_API_BASE`, or stays in demo mode while that is empty. If the hosted server does not answer (a free Render service sleeps and takes up to a minute to wake), the page shows a banner, keeps checking for about two minutes, and switches to AI as soon as the server responds.
+
+### Deploy the reading server on Render
+
+1. Push this repository to GitHub.
+2. In Render, choose **New → Blueprint** and select the repository. `render.yaml` configures the service; enter your `GEMINI_API_KEY` when asked. Never commit the key.
+3. When the service is live, note its address, for example `https://duang-pang.onrender.com`, and check that `https://duang-pang.onrender.com/api/config` returns `{"mode":"ai"}`.
+4. In `js/config.js`, set `REMOTE_API_BASE` to that address followed by `/api`, then commit and push. GitHub Pages redeploys and the Pages site now creates AI readings.
+
+To use another host, set the same environment variables: `HOST=0.0.0.0`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `ALLOWED_ORIGINS` (your Pages origin), `ALLOWED_HOSTS` (the server's public hostname; Render's is added automatically) and `TRUST_PROXY=1` behind the platform's proxy.
+
+### Protection on a public server
+
+- **Allowlists:** only `ALLOWED_HOSTS` (plus loopback) are served, and only same-origin pages or `ALLOWED_ORIGINS` may request readings. CORS headers are sent only to allowed origins.
+- **Limits:** `READINGS_PER_MINUTE` per visitor, `MAX_CONCURRENT_READINGS` at once, and `DAILY_READING_LIMIT` in total per day (default 200). The daily cap is the main spending control, because a visitor can fake their address.
+- **Limitations:** limits are kept in memory, so they reset when the server restarts and apply per instance. There is no user login. Anyone who finds the site can use the daily allowance. For wider use, add authentication and durable limits, and set a budget alert in Google Cloud for the Gemini key.
 
 ## Verification
 

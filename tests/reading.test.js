@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import http from 'node:http';
 import { validateDeck, shuffle, availableCards } from '../js/deck.js';
 import { createDemoReading, validateReading } from '../js/reading.js';
 import { cardText } from '../js/card-text.js';
@@ -150,4 +151,50 @@ test('HTTP server serves assets, protects private files, enforces origin and con
   assert.equal(limited.status, 429);
   assert.equal((await limited.json()).code, 'rate_limit');
   assert.equal((await get('/api/reading')).status, 405);
+});
+
+test('hosted mode: host and origin allowlists, CORS, per-visitor and daily limits', async (context) => {
+  let providerCalls = 0;
+  const pages = 'https://078-atithan.github.io';
+  const server = createAppServer({
+    apiKey: 'private-test-key', model: 'test', allowedOrigins: [pages], allowedHosts: ['reading.example.com'],
+    readingsPerMinute: 2, dailyLimit: 3, trustProxy: true,
+    fetchImpl: async () => { providerCalls += 1; return providerResponse(geminiResponse(JSON.stringify(responseFixture()))); },
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  context.after(() => new Promise((resolve) => { server.closeAllConnections(); server.close(resolve); }));
+  const port = server.address().port;
+  // fetch() forbids overriding Host, so use node:http for hosted-style requests.
+  const call = (method, pathname, headers = {}, body) => new Promise((resolve, reject) => {
+    const request = http.request({ host: '127.0.0.1', port, method, path: pathname, headers: { Host: 'reading.example.com', ...headers } }, (response) => {
+      let text = ''; response.on('data', (chunk) => { text += chunk; });
+      response.on('end', () => resolve({ status: response.statusCode, headers: response.headers, body: text ? JSON.parse(text) : null }));
+    });
+    request.on('error', reject); request.end(body);
+  });
+  const read = (visitor, origin = pages) => call('POST', '/api/reading', { Origin: origin, 'Content-Type': 'application/json', 'X-Forwarded-For': visitor }, JSON.stringify(payload()));
+
+  assert.equal((await call('GET', '/api/config', { Host: 'evil.example' })).status, 403, 'Unknown hosts are rejected');
+  const config = await call('GET', '/api/config', { Origin: pages });
+  assert.equal(config.headers['access-control-allow-origin'], pages);
+  assert.deepEqual(config.body, { mode: 'ai' });
+  const preflight = await call('OPTIONS', '/api/reading', { Origin: pages, 'Access-Control-Request-Method': 'POST' });
+  assert.equal(preflight.status, 204);
+  assert.match(preflight.headers['access-control-allow-methods'], /POST/);
+  assert.equal((await call('OPTIONS', '/api/reading', { Origin: 'https://unrelated.example' })).status, 403);
+  const blocked = await read('1.1.1.1', 'https://unrelated.example');
+  assert.equal(blocked.status, 403);
+  assert.equal(blocked.headers['access-control-allow-origin'], undefined);
+
+  assert.equal((await read('1.1.1.1')).status, 200);
+  assert.equal((await read('1.1.1.1')).status, 200);
+  const limited = await read('1.1.1.1');
+  assert.equal(limited.status, 429);
+  assert.equal(limited.body.code, 'rate_limit');
+  assert.equal(limited.headers['access-control-allow-origin'], pages, 'Errors stay readable by the allowed site');
+  assert.equal((await read('2.2.2.2')).status, 200, 'Another visitor has their own allowance');
+  const capped = await read('3.3.3.3');
+  assert.equal(capped.status, 503);
+  assert.equal(capped.body.code, 'daily_limit');
+  assert.equal(providerCalls, 3);
 });
