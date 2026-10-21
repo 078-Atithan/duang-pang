@@ -1,0 +1,421 @@
+/* Reading wizard: workspace, stepper, topic/question/spread/details steps. */
+.reading-section {
+  border-block: 1px solid var(--line);
+  padding: 66px 0 30px;
+  background:
+    radial-gradient(ellipse at 100% 0, #a230a40b, transparent 50%), #f0edf8;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 29px;
+  gap: 25px;
+}
+.section-heading .eyebrow {
+  color: var(--magenta);
+  margin-bottom: 12px;
+  font-size: 10px;
+}
+.section-aside {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.9;
+  text-align: right;
+}
+.reading-workspace {
+  border: 1px solid #d5cbe9;
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-bottom: 1px solid var(--line);
+  padding: 0 34px;
+  background: #f7f4fd;
+  list-style: none;
+}
+.stepper li {
+  position: relative;
+  padding: 0 10px;
+}
+.stepper li.active::after {
+  position: absolute;
+  content: "";
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--magenta));
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  border-radius: 3px 3px 0 0;
+}
+.step-button {
+  width: 100%;
+  min-height: 78px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+.step-button:disabled {
+  opacity: 0.63;
+}
+.step-number {
+  display: grid;
+  place-content: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid var(--lavender);
+  border-radius: 50%;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.active .step-number,
+.complete .step-number {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: var(--cream);
+}
+.active .step-number {
+  box-shadow: 0 0 0 4px #2900870a;
+}
+.wizard {
+  padding: 36px 42px 27px;
+  min-height: 400px;
+}
+.wizard-heading {
+  margin-bottom: 25px;
+}
+.wizard-heading h3 {
+  font: 28px/1.3 var(--serif);
+  letter-spacing: -0.4px;
+  color: var(--purple);
+}
+.wizard-heading p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 9px;
+}
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.choice {
+  display: block;
+  cursor: pointer;
+  position: relative;
+}
+.choice input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.choice-body {
+  position: relative;
+  display: block;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.choice:hover .choice-body {
+  border-color: var(--magenta);
+  background: #f9f3fc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 19px #29008709;
+}
+.choice input:checked + .choice-body {
+  border-color: var(--purple);
+  background: #eee8fa;
+  box-shadow:
+    inset 0 0 0 1px var(--purple),
+    0 4px 15px #29008708;
+}
+.choice input:focus-visible + .choice-body {
+  outline: 3px solid var(--magenta);
+  outline-offset: 4px;
+}
+.topic-choice .choice-body {
+  padding: 21px;
+  min-height: 133px;
+}
+.topic-choice svg {
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 12px;
+  color: var(--magenta);
+}
+.choice-title {
+  font-size: 14px;
+  display: block;
+  font-weight: 600;
+}
+.choice-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  display: block;
+}
+.choice-check {
+  position: absolute;
+  right: 13px;
+  top: 13px;
+  border: 1px solid var(--lavender);
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 15px;
+  text-align: center;
+  color: transparent;
+}
+.choice input:checked + .choice-body .choice-check {
+  border-color: var(--purple);
+  color: var(--cream);
+  background: var(--purple);
+}
+.wizard-footer {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.wizard-footer .helper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+.wizard-footer .button {
+  min-height: 46px;
+  font-size: 13px;
+  padding: 11px 20px;
+}
+.reading-footnote {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  padding-top: 23px;
+  text-align: center;
+}
+.question-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 32px;
+}
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+.optional {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
+  margin-left: 6px;
+}
+textarea,
+input:not([type="radio"]):not([type="checkbox"]),
+select {
+  display: block;
+  width: 100%;
+  min-height: 47px;
+  padding: 12px 14px;
+  border: 1px solid #cfc4e3;
+  background: #fffefd;
+  color: var(--ink);
+  border-radius: 8px;
+}
+textarea {
+  resize: vertical;
+  min-height: 174px;
+  line-height: 1.7;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #857990;
+}
+.field-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 7px;
+  gap: 18px;
+}
+.question-tips {
+  background: #f3eef9;
+  padding: 23px;
+  border: 1px solid #e9e1f4;
+  border-radius: 11px;
+}
+.question-tips h4 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.question-tips p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.question-tips .tip-good {
+  color: var(--purple);
+}
+.example-button {
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #bca4d3;
+  font-size: 13px;
+  padding: 0 0 5px;
+  line-height: 1.7;
+}
+.spread-count {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 23px;
+}
+.spread-count .choice-body {
+  min-width: 135px;
+  padding: 12px 23px;
+  text-align: center;
+}
+.spread-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.spread-choice .choice-body {
+  padding: 22px;
+}
+.mini-spread {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin: 7px 0 22px;
+}
+.mini-card {
+  display: grid;
+  place-content: center;
+  height: 69px;
+  width: 43px;
+  border: 1px solid #b69dd4;
+  color: var(--gold);
+  background: linear-gradient(145deg, var(--purple-light), var(--purple));
+  border-radius: 4px;
+  font: italic 17px var(--serif);
+  box-shadow:
+    inset 0 0 0 3px #f2e0a445,
+    0 3px 7px #29008714;
+}
+.spread-positions {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.spread-grid.single {
+  grid-template-columns: minmax(230px, 440px);
+}
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 19px 24px;
+  max-width: 780px;
+}
+.details-grid .field:last-child {
+  grid-column: 1 / -1;
+}
+/* Career picker. The list floats over the content so closing it never moves the Continue button.
+   Its height fits the ~190px below the field before the workspace's overflow:hidden edge. */
+.career-field {
+  position: relative;
+}
+.combobox-list {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  max-height: 176px;
+  overflow-y: auto;
+  margin: 6px 0 0;
+  padding: 6px;
+  list-style: none;
+  background: #fffefd;
+  border: 1px solid #cfc4e3;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px #2900871a;
+}
+.combobox-option {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.combobox-option:hover,
+.combobox-option.is-active {
+  background: var(--sand);
+  color: var(--purple);
+}
+.combobox-option[aria-selected="true"] {
+  font-weight: 600;
+  color: var(--purple);
+}
+.combobox-option.is-other:not(:first-child) {
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 6px 6px;
+}
+.career-field #careerOther {
+  margin-top: 10px;
+}
+.privacy-inline {
+  display: flex;
+  gap: 10px;
+  background: #f0eaf8;
+  color: #665079;
+  padding: 13px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-top: 20px;
+}
+.draw-heading {
+  text-align: center;
+}
+.draw-heading .eyebrow {
+  color: var(--magenta);
+  margin-bottom: 8px;
+}
+.draw-counter {
+  display: inline-block;
+  background: #eee7f8;
+  color: var(--purple);
+  padding: 5px 14px;
+  border: 1px solid #e0d3f2;
+  border-radius: 20px;
+  font-size: 11px;
+  margin-top: 12px;
+}

@@ -3,17 +3,17 @@
  * until a scan finishes loading, including when loading finishes before startup.
  */
 export function initializeHero() {
-  document.querySelectorAll('.hero-card-image').forEach((image) => {
-    const card = image.closest('.hero-card');
+  document.querySelectorAll(".hero-card-image").forEach((image) => {
+    const card = image.closest(".hero-card")
     const revealArtwork = () => {
-      if (image.naturalWidth > 0) card.classList.remove('is-awaiting-art');
-    };
+      if (image.naturalWidth > 0) card.classList.remove("is-awaiting-art")
+    }
 
     if (image.complete) {
-      revealArtwork();
+      revealArtwork()
     } else {
-      image.addEventListener('load', revealArtwork, { once: true });
+      image.addEventListener("load", revealArtwork, { once: true })
     }
     // A missing scan leaves the supplied card back in place, without an error UI.
-  });
+  })
 }

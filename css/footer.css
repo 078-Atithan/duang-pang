@@ -1,0 +1,95 @@
+/* Footer, dialogs and the no-script notice. */
+.site-footer {
+  border-top: 1px solid var(--line);
+  background: #f1edf8;
+}
+.footer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block: 34px;
+  gap: 25px;
+}
+.footer-top .brand {
+  font-size: 26px;
+}
+.footer-top .brand-symbol {
+  font-size: 36px;
+}
+.footer-top > p {
+  color: var(--muted);
+  font: italic 16px var(--serif);
+}
+.footer-top nav {
+  display: flex;
+  gap: 24px;
+}
+.footer-link {
+  min-height: 44px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  padding: 8px 0;
+}
+.footer-link:hover {
+  color: var(--magenta);
+  text-decoration: underline;
+}
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block: 17px 22px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+}
+dialog {
+  border: 1px solid var(--lavender);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 16px;
+  width: min(510px, calc(100% - 36px));
+  padding: 0;
+  box-shadow: 0 20px 90px #18034f40;
+}
+dialog::backdrop {
+  background: #18034f99;
+  backdrop-filter: blur(5px);
+}
+.dialog-content {
+  padding: 38px;
+  position: relative;
+}
+.dialog-content .eyebrow {
+  color: var(--magenta);
+}
+.dialog-content h2 {
+  font-size: 32px;
+  margin-block: 15px 20px;
+}
+.dialog-content p {
+  font-size: 14px;
+  color: var(--muted);
+  white-space: pre-line;
+}
+.dialog-close {
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 26px;
+  background: none;
+  border: none;
+}
+.noscript {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: var(--gold);
+  text-align: center;
+  z-index: 50;
+}

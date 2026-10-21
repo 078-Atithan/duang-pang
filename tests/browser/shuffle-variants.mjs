@@ -23,10 +23,14 @@ async function prepare(page) {
   await page.locator('#continue-button').click();
   await page.locator('#continue-button').click();
   await page.locator('#name').fill('Alex');
+  await page.locator('#birthDate').fill('2000-05-18');
+  await page.locator('#status').selectOption('single');
+  await page.locator('#gender').selectOption('other');
+  await page.locator('#career').fill('Designer');
   await page.locator('#continue-button').click();
   await page.locator('.deck-stage.stacked').waitFor();
   const contract = await page.evaluate(async () => {
-    window.__shuffleModule = await import('/js/effects.js');
+    window.__shuffleModule = await import('/js/ui/effects.js');
     window.__shuffleTemplate = document.querySelector('.deck-stage').cloneNode(true);
     return { duration: window.__shuffleModule.SHUFFLE_DURATION, styles: window.__shuffleModule.SHUFFLE_STYLES };
   });

@@ -14,6 +14,14 @@ page.on('pageerror', (error) => errors.push(error.message));
 page.on('dialog', (dialog) => { errors.push(`Unexpected dialog: ${dialog.message()}`); dialog.dismiss(); });
 const click = (action) => page.locator(`[data-action="${action}"]`).click();
 const next = () => page.locator('#continue-button').click();
+// Every personal detail is required before the draw step.
+const fillDetails = async () => {
+  await page.locator('#name').fill('Alex');
+  await page.locator('#birthDate').fill('2000-05-18');
+  await page.locator('#status').selectOption('single');
+  await page.locator('#gender').selectOption('other');
+  await page.locator('#career').fill('Designer');
+};
 const choose = (name, value) => page.locator(`label:has(input[name="${name}"][value="${value}"])`).click();
 const noOverflow = async (width) => {
   const dimensions = await page.evaluate(() => ({ full: document.documentElement.scrollWidth, view: window.innerWidth }));
@@ -81,7 +89,7 @@ try {
   await choose('topic', 'love'); await next(); await next();
   await choose('count', '4');
   assert.equal(await page.locator('.mini-card').count(), 4);
-  await next(); await next();
+  await next(); await fillDetails(); await next();
   await draw(4); await click('reveal');
   assert.equal(await page.locator('.result-card').count(), 4);
   assert.equal(new Set(await page.locator('.result-card .card-name').allTextContents()).size, 4);
@@ -124,7 +132,7 @@ try {
   assert.ok((await page.locator('.result-copy .card-name').allTextContents()).every((name) => /[a-z]/i.test(name)));
   await page.locator('#language-toggle').click();
   await click('restart');
-  await choose('topic', 'love'); await next(); await next(); await next(); await next();
+  await choose('topic', 'love'); await next(); await next(); await next(); await fillDetails(); await next();
   await draw(3); await click('reveal');
   assert.ok((await page.locator('.result-copy, .result-summary').allTextContents()).every((text) => !/[a-z]/i.test(text)), 'A reading started in Thai must also be fully localized');
 
@@ -138,7 +146,7 @@ try {
     await route.fulfill({ json: { mode: 'ai', language: input.language, summary: input.language === 'th' ? 'คำอ่านจำลองภาษาไทยสำหรับทดสอบ' : 'A mocked AI response for interface testing.', cards: input.cardIds.map((img) => ({ img, reflection: input.language === 'th' ? 'คำอ่านตามบริบทของคุณ' : 'A contextual reflection.', prompt: input.language === 'th' ? 'คุณเลือกทำอะไรได้บ้าง?' : 'What can you choose?' })) } });
   });
   await page.reload(); await page.locator('.topic-grid').waitFor();
-  await choose('topic', 'daily'); await next(); await next(); await next(); await next();
+  await choose('topic', 'daily'); await next(); await next(); await next(); await fillDetails(); await next();
   await draw(3);
   assert.ok(await page.locator('[data-action="reveal"]').isDisabled());
   await page.locator('input[name="consent"]').check(); await click('reveal');

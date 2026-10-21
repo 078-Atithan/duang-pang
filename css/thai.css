@@ -1,0 +1,46 @@
+/* Share one Thai font across UI copy, quotes, card names and result headings. */
+html[lang="th"] {
+  --sans: var(--thai);
+  --serif: var(--thai);
+}
+html[lang="th"] h1,
+html[lang="th"] h2,
+html[lang="th"] h3 {
+  font-family: var(--thai);
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+html[lang="th"] h1 {
+  font-size: clamp(40px, 4.5vw, 60px);
+}
+html[lang="th"] .eyebrow {
+  letter-spacing: 0.5px;
+}
+html[lang="th"] .result-card .card-name {
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+html[lang="th"] .result-card h5 {
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: 0;
+  text-transform: none;
+}
+html[lang="th"] .result-card .result-copy p:not(.card-keywords) {
+  font-size: 14px;
+  line-height: 1.85;
+}
+html[lang="th"] .card-keywords {
+  font-size: 12px;
+  line-height: 1.8;
+}
+html[lang="th"] .reflection-box,
+html[lang="th"] .result-question {
+  font-style: normal;
+  letter-spacing: 0;
+}
+html[lang="th"] .result-question {
+  font-size: 18px;
+  line-height: 1.85;
+}

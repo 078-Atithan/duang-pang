@@ -53,6 +53,10 @@ async function startReading(page, count) {
   if (count === 4) await page.locator('label:has(input[name="count"][value="4"])').click();
   await next();
   await page.locator('#name').fill('Alex');
+  await page.locator('#birthDate').fill('2000-05-18');
+  await page.locator('#status').selectOption('single');
+  await page.locator('#gender').selectOption('other');
+  await page.locator('#career').fill('Designer');
   await next();
   await page.locator('.deck-stage.stacked').waitFor();
   assert.equal(await page.locator('.deck-card').count(), 12);
@@ -254,7 +258,7 @@ try {
   watchErrors(reduced);
   // A valid SVG served for the expected JPG paths verifies the supplied-art branch
   // without bundling third-party tarot artwork in the repository.
-  const image = await readFile(new URL('../assets/card-back.svg', import.meta.url));
+  const image = await readFile(new URL('../../assets/card-back.svg', import.meta.url));
   await reduced.route('**/assets/images/tarot/*.jpg', (route) => route.fulfill({ contentType: 'image/svg+xml', body: image }));
   await reduced.goto(base);
   await reduced.locator('.topic-grid').waitFor();
@@ -269,8 +273,8 @@ try {
 
   // Validate owner-supplied scans when the complete deck is present, using the
   // real server and browser decoders rather than mocked image responses.
-  const { cards } = JSON.parse(await readFile(new URL('../assets/data/tarot-images.json', import.meta.url), 'utf8'));
-  const files = new Set(await readdir(new URL('../assets/images/tarot/', import.meta.url)));
+  const { cards } = JSON.parse(await readFile(new URL('../../assets/data/tarot-images.json', import.meta.url), 'utf8'));
+  const files = new Set(await readdir(new URL('../../assets/images/tarot/', import.meta.url)));
   const missing = cards.filter((card) => !files.has(card.img)).map((card) => card.img);
   report.realArtwork = { available: missing.length === 0, missing };
   if (!missing.length) {
