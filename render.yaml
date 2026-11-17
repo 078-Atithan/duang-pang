@@ -1,5 +1,5 @@
 # Render blueprint for the Duang Pang reading server (https://render.com/docs/blueprint-spec).
-# In Render: New > Blueprint > pick this repository. You will be asked for GEMINI_API_KEY.
+# In Render: New > Blueprint > pick this repository. You will be asked for GEMINI_API_KEY and NVIDIA_API_KEY.
 services:
   - type: web
     name: duang-pang
@@ -16,14 +16,23 @@ services:
       # Render's proxy sets X-Forwarded-For, so per-visitor limits see real visitors.
       - key: TRUST_PROXY
         value: "1"
+      # Diviner 3 (last fallback)
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
         value: gemini-flash-latest
+      # Diviners 1 and 2 share the NVIDIA key.
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NEMOTRON_MODEL
+        value: nvidia/nemotron-3.5-super-vl-120b-a12b
+      - key: ULTRA_MODEL
+        value: nvidia/nemotron-3-ultra-550b-a55b
       # The GitHub Pages site that may call this server.
       - key: ALLOWED_ORIGINS
         value: https://078-atithan.github.io
+      # One reading can use up to three requests when diviners are switched.
       - key: READINGS_PER_MINUTE
-        value: "3"
+        value: "6"
       - key: DAILY_READING_LIMIT
         value: "200"

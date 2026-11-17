@@ -1,6 +1,6 @@
 # Duang Pang
 
-A responsive, bilingual tarot website built with semantic HTML, CSS variables, and native ES modules. The default experience works locally without an API key. An optional Node.js server can create AI readings with the Google Gemini API.
+A responsive, bilingual tarot website built with semantic HTML, CSS variables, and native ES modules. The default experience works locally without an API key. An optional Node.js server can create AI readings with three AI diviners: two NVIDIA Nemotron models first, then Google Gemini as a fallback.
 
 ## Start locally
 
@@ -42,14 +42,17 @@ duang-pang/
 │   ├── data/                     topics.js, spreads.js, careers.js, icons.js
 │   ├── i18n/                     strings.js (all UI text, EN/TH), index.js (t, language), card-text.js (Thai card text)
 │   ├── wizard/                   wizard.js (stepper, navigation), steps.js (steps 1-4, details checks), career-picker.js (searchable career list), draw.js (shuffle and pick)
-│   ├── reading/                  deck.js (shuffle, deck checks), demo.js (local reading), api.js (server calls), validate.js
+│   ├── reading/                  deck.js (shuffle, deck checks), local.js (local mode), api.js (server calls), validate.js
 │   ├── results/                  reveal.js (make the reading), results.js (show it), errors.js (error messages), download.js
 │   └── ui/                       effects.js (animations), hero.js, dialogs.js
 ├── server/
 │   ├── server.js                 Entry point for `npm start`: reads settings and listens
 │   ├── app.js                    Routes, host/origin checks, CORS, reading limits
-│   ├── ai/prompt.js              SYSTEM_PROMPT and the data sent to Gemini (only age, gender, status, occupation)
-│   ├── ai/gemini.js              Gemini request, response checks and error codes
+│   ├── ai/prompt.js              SYSTEM_PROMPT and the data sent to the AI (only age, gender, status, occupation)
+│   ├── ai/diviners.js            Diviner order, models, time limits and estimates
+│   ├── ai/gemini.js              Gemini request (Diviner 3, last fallback)
+│   ├── ai/nvidia.js              NVIDIA NIM request (Diviners 1 and 2)
+│   ├── ai/shared.js              Reply checks and error codes shared by both
 │   ├── validation.js             Checks every reading request against the trusted deck
 │   ├── static.js                 Serves index.html, css/, js/ and assets/ only
 │   ├── http.js                   Security headers and JSON helpers
@@ -58,7 +61,7 @@ duang-pang/
 │   └── errors.js                 RequestError with a stable error code
 ├── assets/                       Card back, decorative SVGs, data/tarot-images.json, images/tarot/*.jpg
 ├── tests/
-│   ├── unit/                     `npm test`: deck, demo-reading, careers, validation, ai, server
+│   ├── unit/                     `npm test`: deck, local-reading, careers, validation, ai, server
 │   ├── browser/                  Optional Playwright checks: smoke, motion, shuffle-variants, stepper
 │   └── helpers.js                Shared test fixtures
 ├── scripts/
@@ -82,7 +85,8 @@ duang-pang/
 | How the results page looks | `js/results/results.js` (+ `css/results.css`) |
 | Error messages for failed readings | `js/results/errors.js` and the `error…` keys in `js/i18n/strings.js` |
 | The AI's instructions or tone | `server/ai/prompt.js` |
-| Gemini settings or error handling | `server/ai/gemini.js` |
+| Diviner order, models or time limits | `server/ai/diviners.js` |
+| Switching between diviners | `js/results/reveal.js`, `js/ui/diviner-dialog.js` |
 | Which sites may use the server, and limits | `server/app.js`, `.env` / `render.yaml` |
 | Which server the page talks to | `js/config.js` (`REMOTE_API_BASE`) |
 
@@ -125,32 +129,42 @@ The website respects the operating system's reduced-motion preference: animation
 
 Changing the topic, question, spread, or personal details invalidates an existing draw, so the result always matches the current inputs. Navigating backward without changes preserves the draw. Refreshing clears the session.
 
-## Demo versus AI mode
+## Local mode and AI diviners
 
-**Local demo (default):** the browser assembles reflections from the supplied card meanings, the selected topic, and spread positions. It is explicitly labeled as a local demo. It does not make semantic AI predictions about the user's question. All 78 card names, displayed keywords, meanings, and reflection questions have Thai translations in `js/i18n/card-text.js`. Switching language rebuilds the demo text immediately while preserving your selected cards, order, and inputs. Downloaded readings use the displayed language. Thai form and result text share the same Tahoma-based font stack; Thai quotes and reflection prompts use normal, non-italic text. The English source JSON and lettering printed on the supplied card images remain unchanged.
+**Local mode (default):** shows each drawn card's traditional meaning only: card name, keywords and meanings, under its spread position. Nothing about the visitor is used: no name, question, topic or personal reflection. It is used when no AI key is set, when the reading server cannot be reached (for example on GitHub Pages), when the visitor clicks "Show card meanings only", or when they decline to wait for the next diviner. All 78 card names, keywords and meanings have Thai translations in `js/i18n/card-text.js`; switching language rebuilds the page immediately.
 
-**Optional AI:** the server sends verified card context (each card's name, keywords, light and shadow meanings, and its spread position), the topic, the user's question, and only age (calculated from the birth date), gender, relationship status, and occupation to Google Gemini, and only after consent at the reveal step. Name and birth date are never sent. For each position the model returns the card name, its meaning in that position, a reflection, and a reflection question. It requests a new contextual interpretation in the selected language. Source card meanings remain visible separately from the generated interpretation. The UI shows an AI error and lets the user retry with the same cards or explicitly use the local demo. Viewing a completed result does not make a second request. Switching interface language reuses a cached reading when available. Otherwise, a clearly labeled button offers a new AI interpretation of the same cards in the selected language; only clicking it makes another provider request. Completed language versions remain cached in page memory.
+**AI diviners:** readings are tried in this order. Visitors only see "Diviner 1/2/3"; model names stay on the server.
+
+| Diviner | Model (`.env`) | Usual time | Server waits |
+| --- | --- | --- | --- |
+| 1 | Nemotron on NVIDIA NIM, `NEMOTRON_MODEL` | 10–60 s | 90 s |
+| 2 | Nemotron Ultra on NVIDIA NIM, `ULTRA_MODEL` | 20–60 s | 120 s |
+| 3 | Google Gemini, `GEMINI_MODEL` (default `gemini-flash-latest`) | 10–30 s | 45 s |
+
+While a diviner works, the page shows which one it is, its usual time and a running timer. If it is out of quota, busy, too slow or returns an unusable answer, the page asks: keep waiting for the next diviner, or show the card meanings only (local mode). Esc also chooses local mode. If the last diviner fails, the visitor sees the error and can try again from Diviner 1 or use local mode. A blocked question, the server's own rate limits and network errors do not switch diviners. A diviner without its API key is skipped. Order, estimates and time limits are in `server/ai/diviners.js`; the switching logic is in `js/results/reveal.js`.
+
+The server sends verified card context (each card's name, keywords, light and shadow meanings, and its spread position), the topic, the visitor's question, and only age (calculated from the birth date), gender, relationship status and occupation, and only after consent at the reveal step. Name and birth date are never sent. The prompt (`SYSTEM_PROMPT` in `server/ai/prompt.js`) asks for decisive readings: one clear outcome, no hedging, a direct "Yes"/"No" verdict for yes/no questions, timing through readiness milestones (never exact dates), and preparation rather than abrupt leaps for high-stakes decisions. It keeps a few limits: no illness or death predictions or treatment advice, no specific investments or bets, no accusing a named person of a concrete act, and support instead of predictions if self-harm is mentioned. Both adapters (`server/ai/gemini.js`, `server/ai/nvidia.js`) request strict JSON, check the cards come back in order, and map provider failures to stable error codes (`server/ai/shared.js`).
 
 To configure AI:
 
 1. Copy `.env.example` to `.env` inside this project.
-2. Set `GEMINI_API_KEY` to your own key from [Google AI Studio](https://aistudio.google.com/apikey).
-3. Set `GEMINI_MODEL` to a Gemini model that supports structured JSON output, for example `gemini-flash-latest`.
-4. Restart `npm start`.
+2. Set `GEMINI_API_KEY` (from [Google AI Studio](https://aistudio.google.com/apikey)) and `NVIDIA_API_KEY` (from [NVIDIA build](https://build.nvidia.com)). Either can be left blank to skip those diviners.
+3. Restart `npm start`. The console lists the active diviners.
 
 ```dotenv
-GEMINI_API_KEY=your-api-key
+GEMINI_API_KEY=your-gemini-key
 GEMINI_MODEL=gemini-flash-latest
+NVIDIA_API_KEY=your-nvidia-key
+NEMOTRON_MODEL=nvidia/nemotron-3.5-super-vl-120b-a12b
+ULTRA_MODEL=nvidia/nemotron-3-ultra-550b-a55b
 PORT=4173
 ```
 
-**Never put the key in `js/config.js`, HTML, or any browser file.** The application has no frontend API-key field. If either server setting is blank, it stays in demo mode. API usage may incur charges on your provider account.
-
-The adapter calls `generateContent` with a system instruction (`SYSTEM_PROMPT` in `server/ai/prompt.js`) and a `responseSchema` for [structured output](https://ai.google.dev/gemini-api/docs/structured-output). It validates the returned card order, treats blocked prompts and safety stops as a request to rephrase, and treats any other non-`STOP` finish as incomplete. Google's Gemini API data-handling policies apply.
+**Never put a key in `js/config.js`, HTML, or any browser file.** The application has no frontend API-key field. API usage may incur charges on your provider accounts; Google's and NVIDIA's data-handling policies apply.
 
 ## API contract
 
-`GET /api/config` returns `{ "mode": "demo" }` or `{ "mode": "ai" }` without exposing credentials.
+`GET /api/config` returns `{ "mode": "demo" }`, or `{ "mode": "ai", "diviners": [{ "id": 1, "estimate": [10, 30], "timeoutSeconds": 45 }, …] }` without exposing credentials or model names. `POST /api/reading` takes an optional `"diviner": 1|2|3` (default: the first available) and returns the reading with `"diviner"` set.
 
 `POST /api/reading` expects JSON, same-origin requests, and explicit consent:
 
@@ -192,7 +206,7 @@ The card order must match the submitted IDs. The server independently looks up a
 
 ## Privacy and deployment scope
 
-The application does not use analytics, cookies, or persistent browser storage. Profile details, questions, and readings stay in memory. Local demo mode sends none of them to a provider. The optional server does not save reading data or log request bodies. Downloads are created only when requested by the user.
+The application does not use analytics, cookies, or persistent browser storage. Profile details, questions, and readings stay in memory. Local mode sends none of them to a provider. The optional server does not save reading data or log request bodies. Downloads are created only when requested by the user.
 
 By default the server binds to **127.0.0.1** and permits only loopback Host headers. It protects private files with a static-file allowlist, checks request origins, enforces in-memory AI request limits, and never returns provider error bodies. Do not upload `.env`.
 
@@ -203,25 +217,25 @@ The same code supports three setups. Nothing changes for local use: `npm start` 
 | Setup | Where the page is | Where AI readings come from |
 | --- | --- | --- |
 | Local | `http://127.0.0.1:4173` from `npm start` | The server on your computer |
-| Static demo | GitHub Pages | None. A banner says the site is in demo mode |
+| Static site | GitHub Pages | None. A banner says the site is in local mode |
 | Static site + hosted server | GitHub Pages | A server deployed on Render (or similar) |
 
-The page decides in `js/config.js`: when opened on this computer it always uses the local `/api`. Anywhere else it uses `REMOTE_API_BASE`, or stays in demo mode while that is empty. If the hosted server does not answer (a free Render service sleeps and takes up to a minute to wake), the page shows a banner, keeps checking for about two minutes, and switches to AI as soon as the server responds.
+The page decides in `js/config.js`: when opened on this computer it always uses the local `/api`. Anywhere else it uses `REMOTE_API_BASE`, or stays in local mode while that is empty. If the hosted server does not answer (a free Render service sleeps and takes up to a minute to wake), the page shows a banner, keeps checking for about two minutes, and switches to AI as soon as the server responds.
 
 ### Deploy the reading server on Render
 
 1. Push this repository to GitHub.
-2. In Render, choose **New → Blueprint** and select the repository. `render.yaml` configures the service; enter your `GEMINI_API_KEY` when asked. Never commit the key.
+2. In Render, choose **New → Blueprint** and select the repository. `render.yaml` configures the service; enter your `GEMINI_API_KEY` and `NVIDIA_API_KEY` when asked. Never commit the key.
 3. When the service is live, note its address, for example `https://duang-pang.onrender.com`, and check that `https://duang-pang.onrender.com/api/config` returns `{"mode":"ai"}`.
 4. In `js/config.js`, set `REMOTE_API_BASE` to that address followed by `/api`, then commit and push. GitHub Pages redeploys and the Pages site now creates AI readings.
 
-To use another host, set the same environment variables: `HOST=0.0.0.0`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `ALLOWED_ORIGINS` (your Pages origin), `ALLOWED_HOSTS` (the server's public hostname; Render's is added automatically) and `TRUST_PROXY=1` behind the platform's proxy.
+To use another host, set the same environment variables: `HOST=0.0.0.0`, `GEMINI_API_KEY`, `NVIDIA_API_KEY` (and optionally the three model variables), `ALLOWED_ORIGINS` (your Pages origin), `ALLOWED_HOSTS` (the server's public hostname; Render's is added automatically) and `TRUST_PROXY=1` behind the platform's proxy.
 
 ### Protection on a public server
 
 - **Allowlists:** only `ALLOWED_HOSTS` (plus loopback) are served, and only same-origin pages or `ALLOWED_ORIGINS` may request readings. CORS headers are sent only to allowed origins.
 - **Limits:** `READINGS_PER_MINUTE` per visitor, `MAX_CONCURRENT_READINGS` at once, and `DAILY_READING_LIMIT` in total per day (default 200). The daily cap is the main spending control, because a visitor can fake their address.
-- **Limitations:** limits are kept in memory, so they reset when the server restarts and apply per instance. There is no user login. Anyone who finds the site can use the daily allowance. For wider use, add authentication and durable limits, and set a budget alert in Google Cloud for the Gemini key.
+- **Limitations:** limits are kept in memory, so they reset when the server restarts and apply per instance. There is no user login. Anyone who finds the site can use the daily allowance. For wider use, add authentication and durable limits, and set a usage alert for the NVIDIA key.
 
 ## Verification
 

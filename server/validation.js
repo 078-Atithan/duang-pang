@@ -83,6 +83,8 @@ export function validatePayload(
     cardIds: cards.map((card) => card.img),
     profile,
     consent: body.consent === true,
+    // Which diviner to ask (1-3); the server uses the first available one when it is missing.
+    diviner: [1, 2, 3].includes(body.diviner) ? body.diviner : undefined,
     actions: actions.map(({ type, at, cardId }) => ({
       type,
       at,

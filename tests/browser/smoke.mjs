@@ -100,11 +100,13 @@ try {
   await noOverflow(390);
 
   assert.deepEqual(await page.locator('.result-role-title').allTextContents(), ['สถานการณ์ปัจจุบัน', 'อุปสรรค', 'คำแนะนำ', 'บทสรุป']);
+  // Local mode (no AI configured) shows card meanings only: no personal reflections or prompts.
+  assert.equal(await page.locator('.reflection-box').count(), 0, 'Local mode has no personal reflection');
   assert.equal(await page.locator('.result-role-description').count(), 4);
   assert.ok((await page.locator('.result-role-description').allTextContents()).every((text) => /[\u0E00-\u0E7F]/.test(text)));
   const fonts = await page.evaluate(() => {
     const styles = (selector) => getComputedStyle(document.querySelector(selector));
-    return { form: styles('.wizard-heading p').fontFamily, result: styles('.result-copy p').fontFamily, name: styles('.card-name').fontFamily, quote: styles('.reflection-box p').fontFamily, italic: styles('.reflection-box p').fontStyle, tracking: styles('.result-copy h5').letterSpacing };
+    return { form: styles('.wizard-heading p').fontFamily, result: styles('.result-copy p').fontFamily, name: styles('.card-name').fontFamily, quote: styles('.reflection-box p, .result-summary p').fontFamily, italic: styles('.reflection-box p, .result-summary p').fontStyle, tracking: styles('.result-copy h5').letterSpacing };
   });
   assert.equal(fonts.result, fonts.form, 'Thai result body uses the same font as the form');
   assert.equal(fonts.name, fonts.form, 'Thai card names use the shared Thai font');

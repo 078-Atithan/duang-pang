@@ -235,20 +235,35 @@ export const COPY = {
   viewReading: ["View my reading", "ดูผลการอ่านไพ่"],
   revealing: ["Preparing your reflection…", "กำลังเตรียมผลการอ่านไพ่…"],
   staticDemoBanner: [
-    "Demo mode · This site runs without the AI reading server, so readings are assembled on your device from the card meanings.",
-    "โหมดสาธิต · เว็บไซต์นี้ทำงานโดยไม่มีเซิร์ฟเวอร์อ่านไพ่ด้วย AI คำอ่านจะสร้างจากความหมายของไพ่บนอุปกรณ์ของคุณ"
+    "Local mode · This site runs without the AI reading server, so it shows each card’s traditional meaning only.",
+    "โหมดในเครื่อง · เว็บไซต์นี้ทำงานโดยไม่มีเซิร์ฟเวอร์อ่านไพ่ด้วย AI จึงแสดงเฉพาะความหมายดั้งเดิมของไพ่แต่ละใบ"
   ],
   remoteDownBanner: [
-    "AI readings are unavailable right now. The reading server may be starting up; until it responds, readings use the on-device demo.",
-    "ขณะนี้ยังใช้การอ่านไพ่ด้วย AI ไม่ได้ เซิร์ฟเวอร์อาจกำลังเริ่มทำงาน ระหว่างนี้คำอ่านจะใช้โหมดสาธิตบนอุปกรณ์"
+    "AI readings are unavailable right now. The reading server may be starting up; until it responds, the site shows card meanings only (local mode).",
+    "ขณะนี้ยังใช้การอ่านไพ่ด้วย AI ไม่ได้ เซิร์ฟเวอร์อาจกำลังเริ่มทำงาน ระหว่างนี้จะแสดงเฉพาะความหมายของไพ่ (โหมดในเครื่อง)"
   ],
-  waitingAi: [
-    "Reading your cards… this usually takes 10–20 seconds.",
-    "กำลังอ่านไพ่ของคุณ… โดยปกติใช้เวลาประมาณ 10–20 วินาที"
+  diviner: ["Diviner {n}", "ผู้ทำนาย {n}"],
+  waitingDiviner: [
+    "Diviner {n} is reading your cards… usually {estimate}.",
+    "ผู้ทำนาย {n} กำลังอ่านไพ่ของคุณ… โดยปกติใช้เวลา {estimate}"
   ],
+  estimateSeconds: ["{low}–{high} seconds", "{low}–{high} วินาที"],
+  estimateMinutes: ["{low}–{high} minutes", "{low}–{high} นาที"],
+  elapsed: ["{time} so far", "ผ่านไปแล้ว {time}"],
+  switchTitle: ["Diviner {n} can’t finish this reading", "ผู้ทำนาย {n} อ่านไพ่ครั้งนี้ไม่สำเร็จ"],
+  switchReason_quota: ["Diviner {n} has reached its usage limit.", "ผู้ทำนาย {n} ใช้งานถึงขีดจำกัดแล้ว"],
+  switchReason_busy: ["Diviner {n} is too busy right now.", "ผู้ทำนาย {n} มีผู้ใช้งานจำนวนมากในขณะนี้"],
+  switchReason_timeout: ["Diviner {n} is taking too long.", "ผู้ทำนาย {n} ใช้เวลานานเกินไป"],
+  switchReason_other: ["Diviner {n} is unavailable right now.", "ผู้ทำนาย {n} ไม่พร้อมให้บริการในขณะนี้"],
+  switchOffer: [
+    "Diviner {next} can read your cards instead. It usually takes {estimate}. Would you like to keep waiting?",
+    "ผู้ทำนาย {next} อ่านไพ่ให้คุณแทนได้ โดยปกติใช้เวลา {estimate} ต้องการรอต่อหรือไม่"
+  ],
+  switchWait: ["Keep waiting for Diviner {next}", "รอผู้ทำนาย {next}"],
+  switchLocal: ["Show card meanings only", "แสดงเฉพาะความหมายไพ่"],
   errorQuota: [
-    "The AI has reached its usage limit for now. Please try again later. Your selected cards are kept, or you can use the local demo.",
-    "ขณะนี้ AI ใช้งานถึงขีดจำกัดแล้ว กรุณาลองใหม่ภายหลัง ไพ่ที่เลือกยังอยู่ หรือจะใช้โหมดสาธิตในเครื่องก็ได้"
+    "The AI has reached its usage limit for now. Please try again later. Your selected cards are kept, or you can use local mode.",
+    "ขณะนี้ AI ใช้งานถึงขีดจำกัดแล้ว กรุณาลองใหม่ภายหลัง ไพ่ที่เลือกยังอยู่ หรือจะใช้โหมดในเครื่องก็ได้"
   ],
   errorBusy: [
     "The AI service is very busy right now. Please try again in a moment. Your selected cards are kept.",
@@ -267,30 +282,30 @@ export const COPY = {
     "คำอ่านถูกตัดก่อนจะเสร็จสมบูรณ์ กรุณาลองใหม่อีกครั้ง"
   ],
   errorBlocked: [
-    "The AI couldn’t interpret this question. Try rephrasing it, or use the local demo.",
-    "AI ไม่สามารถตีความคำถามนี้ได้ ลองเรียบเรียงคำถามใหม่ หรือใช้โหมดสาธิตในเครื่อง"
+    "The AI couldn’t interpret this question. Try rephrasing it, or use local mode.",
+    "AI ไม่สามารถตีความคำถามนี้ได้ ลองเรียบเรียงคำถามใหม่ หรือใช้โหมดในเครื่อง"
   ],
   errorNetwork: [
     "Couldn’t reach the reading server. Check your connection (or, if you run the server yourself, that npm start is still running), then try again.",
     "ติดต่อเซิร์ฟเวอร์อ่านไพ่ไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต (หรือหากรันเซิร์ฟเวอร์เอง ตรวจสอบว่า npm start ยังทำงานอยู่) แล้วลองใหม่"
   ],
   errorConfig: [
-    "The AI service isn’t set up correctly. Check the API key and model in .env. You can use the local demo meanwhile.",
-    "ตั้งค่าบริการ AI ไม่ถูกต้อง ตรวจสอบ API key และ model ในไฟล์ .env ระหว่างนี้ใช้โหมดสาธิตในเครื่องได้"
+    "The AI service isn’t set up correctly. Check the API key and model in .env. You can use local mode meanwhile.",
+    "ตั้งค่าบริการ AI ไม่ถูกต้อง ตรวจสอบ API key และ model ในไฟล์ .env ระหว่างนี้ใช้โหมดในเครื่องได้"
   ],
   demoNotice: [
-    "Local demo · Reflections are assembled from your card data and topic. No AI request is made.",
-    "โหมดสาธิตในเครื่อง · สร้างข้อความจากข้อมูลไพ่และหัวข้อ โดยไม่เรียกใช้ AI"
+    "Local mode · Shows each card’s traditional meaning only. No AI request is made.",
+    "โหมดในเครื่อง · แสดงเฉพาะความหมายดั้งเดิมของไพ่แต่ละใบ โดยไม่เรียกใช้ AI"
   ],
   aiNotice: [
     "AI reading · Your cards and context are used to create a new interpretation.",
     "อ่านไพ่ด้วย AI · ใช้ไพ่และบริบทของคุณสร้างคำอ่านเฉพาะครั้งนี้"
   ],
   consent: [
-    "I agree to send my question, selected cards, and my age, gender, relationship status and occupation to Google Gemini for this reading. My name and birth date are not sent.",
-    "ฉันยินยอมส่งคำถาม ไพ่ที่เลือก รวมถึงอายุ เพศ สถานะความสัมพันธ์ และอาชีพ ให้ Google Gemini เพื่ออ่านไพ่ครั้งนี้ โดยไม่ส่งชื่อและวันเกิด"
+    "I agree to send my question, selected cards, and my age, gender, relationship status and occupation to our AI diviners (models hosted by NVIDIA, and Google Gemini if they are unavailable) for this reading. My name and birth date are not sent.",
+    "ฉันยินยอมส่งคำถาม ไพ่ที่เลือก รวมถึงอายุ เพศ สถานะความสัมพันธ์ และอาชีพ ให้ผู้ทำนาย AI ของเรา (โมเดลที่ให้บริการโดย NVIDIA และ Google Gemini หาก NVIDIA ไม่พร้อม) เพื่ออ่านไพ่ครั้งนี้ โดยไม่ส่งชื่อและวันเกิด"
   ],
-  useDemo: ["Use local demo instead", "ใช้โหมดสาธิตในเครื่องแทน"],
+  useDemo: ["Show card meanings only (local mode)", "แสดงเฉพาะความหมายไพ่ (โหมดในเครื่อง)"],
   resultEyebrow: [
     "THE CARDS YOU CHOSE. A PERSPECTIVE FOR YOU.",
     "ไพ่ที่คุณเลือก และมุมมองสำหรับคุณ"
@@ -307,7 +322,15 @@ export const COPY = {
     "Take what resonates. Leave room for your own understanding.",
     "เก็บสิ่งที่เป็นประโยชน์ และเว้นพื้นที่ให้ความเข้าใจของตัวเอง"
   ],
-  demoBadge: ["Local demo", "สาธิตในเครื่อง"],
+  demoBadge: ["Local mode", "โหมดในเครื่อง"],
+  localIntro: [
+    "The traditional meaning of each card you drew.",
+    "ความหมายดั้งเดิมของไพ่แต่ละใบที่คุณเลือก"
+  ],
+  localSummary: [
+    "Local mode shows the cards’ traditional meanings only, without a personal reading. Try again when a diviner is available for a reading about you.",
+    "โหมดในเครื่องแสดงเฉพาะความหมายดั้งเดิมของไพ่ โดยไม่มีคำทำนายเฉพาะตัว ลองอีกครั้งเมื่อผู้ทำนายพร้อมให้บริการ เพื่อรับคำทำนายสำหรับคุณ"
+  ],
   aiBadge: ["AI interpretation", "คำอ่านจาก AI"],
   upright: ["Upright cards", "ไพ่ตั้งตรง"],
   cardMeaning: ["The card’s meaning", "ความหมายของไพ่"],
@@ -338,8 +361,8 @@ export const COPY = {
   ],
   retry: ["Try again", "ลองอีกครั้ง"],
   readingError: [
-    "The AI reading could not be completed. Your selected cards are safe. Try again or use the local demo.",
-    "อ่านไพ่ด้วย AI ไม่สำเร็จ ไพ่ที่เลือกยังอยู่ ลองอีกครั้งหรือใช้โหมดสาธิตในเครื่อง"
+    "The AI reading could not be completed. Your selected cards are safe. Try again or use local mode.",
+    "อ่านไพ่ด้วย AI ไม่สำเร็จ ไพ่ที่เลือกยังอยู่ ลองอีกครั้งหรือใช้โหมดในเครื่อง"
   ],
   dateError: [
     "Choose a valid date of birth that is not in the future.",
@@ -347,12 +370,12 @@ export const COPY = {
   ],
   fieldTooLong: ["Please shorten this field.", "กรุณาย่อข้อความให้สั้นลง"],
   aboutDialog: [
-    "Duang Pang is a quiet space for self-reflection through tarot. Choose a topic, share context if you wish, and draw your own spread. Local demo readings use the supplied 78-card dataset. When configured, AI readings create a new interpretation from your chosen cards and context.",
-    "ดวงปังเป็นพื้นที่สงบสำหรับทบทวนตัวเองผ่านไพ่ทาโรต์ เลือกหัวข้อ เล่าบริบทตามสะดวก และเลือกไพ่ด้วยตัวเอง โหมดสาธิตใช้ชุดข้อมูล 78 ใบ เมื่อเปิดใช้ AI ระบบจะสร้างคำอ่านใหม่จากไพ่และบริบทของคุณ"
+    "Duang Pang is a quiet space for self-reflection through tarot. Choose a topic, share context if you wish, and draw your own spread. Local mode shows card meanings from the supplied 78-card dataset. When configured, AI readings create a new interpretation from your chosen cards and context.",
+    "ดวงปังเป็นพื้นที่สงบสำหรับทบทวนตัวเองผ่านไพ่ทาโรต์ เลือกหัวข้อ เล่าบริบทตามสะดวก และเลือกไพ่ด้วยตัวเอง โหมดในเครื่องแสดงความหมายไพ่จากชุดข้อมูล 78 ใบ เมื่อเปิดใช้ AI ระบบจะสร้างคำอ่านใหม่จากไพ่และบริบทของคุณ"
   ],
   privacyDialog: [
-    "We do not use analytics, cookies, or persistent storage for readings. In local demo mode, your question and details stay in your browser memory.\n\nIn AI mode, after you consent, your question, selected cards, and only your age (calculated from your birth date), gender, relationship status, and occupation are sent through the reading server to Google Gemini. Your name and birth date are never sent. The server does not save readings or log personal details. Google’s Gemini API data policies apply.\n\nA downloaded reading is saved on your device. Refreshing the page clears the current reading.",
-    "เราไม่ใช้ระบบวิเคราะห์ คุกกี้ หรือพื้นที่เก็บข้อมูลถาวรสำหรับคำอ่าน ในโหมดสาธิต คำถามและรายละเอียดจะอยู่ในหน่วยความจำของเบราว์เซอร์\n\nในโหมด AI หลังคุณยินยอม คำถาม ไพ่ที่เลือก และเฉพาะอายุ (คำนวณจากวันเกิด) เพศ สถานะความสัมพันธ์ และอาชีพ จะส่งผ่านเซิร์ฟเวอร์อ่านไพ่ไปยัง Google Gemini โดยไม่ส่งชื่อและวันเกิด เซิร์ฟเวอร์ไม่บันทึกคำอ่านหรือข้อมูลส่วนตัว นโยบายข้อมูลของ Gemini API ของ Google มีผลบังคับใช้\n\nไฟล์ที่ดาวน์โหลดจะอยู่ในอุปกรณ์ของคุณ การรีเฟรชหน้าจะล้างคำอ่านปัจจุบัน"
+    "We do not use analytics, cookies, or persistent storage for readings. In local mode, your question and details stay in your browser memory.\n\nIn AI mode, after you consent, your question, selected cards, and only your age (calculated from your birth date), gender, relationship status, and occupation are sent through the reading server to our AI diviners: models hosted by NVIDIA first (Diviners 1 and 2), then Google Gemini (Diviner 3) only if you choose to keep waiting. Your name and birth date are never sent. The server does not save readings or log personal details. Google’s and NVIDIA’s API data policies apply.\n\nA downloaded reading is saved on your device. Refreshing the page clears the current reading.",
+    "เราไม่ใช้ระบบวิเคราะห์ คุกกี้ หรือพื้นที่เก็บข้อมูลถาวรสำหรับคำอ่าน ในโหมดในเครื่อง คำถามและรายละเอียดจะอยู่ในหน่วยความจำของเบราว์เซอร์\n\nในโหมด AI หลังคุณยินยอม คำถาม ไพ่ที่เลือก และเฉพาะอายุ (คำนวณจากวันเกิด) เพศ สถานะความสัมพันธ์ และอาชีพ จะส่งผ่านเซิร์ฟเวอร์อ่านไพ่ไปยังผู้ทำนาย AI ของเรา: โมเดลที่ให้บริการโดย NVIDIA ก่อน (ผู้ทำนาย 1 และ 2) และ Google Gemini (ผู้ทำนาย 3) เฉพาะเมื่อคุณเลือกรอต่อ โดยไม่ส่งชื่อและวันเกิด เซิร์ฟเวอร์ไม่บันทึกคำอ่านหรือข้อมูลส่วนตัว นโยบายข้อมูลของ API ของ Google และ NVIDIA มีผลบังคับใช้\n\nไฟล์ที่ดาวน์โหลดจะอยู่ในอุปกรณ์ของคุณ การรีเฟรชหน้าจะล้างคำอ่านปัจจุบัน"
   ],
   disclaimerDialog: [
     "Tarot is a tool for reflection and entertainment. It cannot establish facts, reveal another person’s private thoughts, diagnose health conditions, or guarantee future events.\n\nConsider the cards as prompts, not instructions. Use qualified professional support for medical, financial, or legal decisions. Your choices and circumstances matter more than a spread.",

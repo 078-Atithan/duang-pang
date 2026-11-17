@@ -8,6 +8,7 @@ import { $, escapeHtml, label, announce, actionButton } from "../dom.js"
 import { renderWizard, renderStepper } from "./wizard.js"
 import { errorText } from "../results/errors.js"
 import { renderEmptyResults } from "../results/results.js"
+import { divinerById, estimateText, elapsedText } from "../results/diviners.js"
 
 const positions = () => local(currentSpread().positions)
 
@@ -20,12 +21,18 @@ function renderSlots() {
     .join("")}</div>`
 }
 
+function waitingMarkup() {
+  if (!state.diviner) return `<p class="waiting-status" role="status">${label("revealing")}</p>`
+  const estimate = estimateText(divinerById(state.diviner))
+  return `<p class="waiting-status" role="status">${label("waitingDiviner", { n: state.diviner, estimate })} <span class="waiting-elapsed" aria-hidden="true">${escapeHtml(elapsedText(state.waitStarted))}</span></p>`
+}
+
 export function renderDraw() {
   const ready = state.chosen.length === state.count
   const ai = session.serverConfig.mode === "ai"
   const canReveal = !state.busy && (state.result || !ai || state.consent)
   const deckMarkup = `<div class="deck-stage ${state.phase}" role="group" aria-label="${label("step4")}">${Array.from({ length: 12 }, (_, index) => `<button type="button" class="deck-card" style="--i:${index}" data-card-index="${index}" aria-label="${label("chooseCard", { number: index + 1 })}" ${state.phase !== "fanned" ? "disabled" : ""}><img src="${CONFIG.cardBack}" alt=""></button>`).join("")}</div><div class="draw-action">${state.phase === "fanned" ? `<p class="status-message">${label("pickHint")}</p>` : actionButton("shuffle", label("shuffle"), "button-dark")}</div>`
-  const readyMarkup = `<div class="result-ready"><h3>${label("readyTitle")}</h3><p>${label("readyDescription")}</p>${actionButton("reveal", `${label(state.busy ? "revealing" : state.result ? "viewReading" : state.error ? "retry" : "reveal")} ✦`, "button-dark", canReveal ? "" : "disabled")}${state.busy ? `<p class="waiting-status" role="status">${label(ai ? "waitingAi" : "revealing")}</p>` : ""}${ai && !state.result ? `<label class="consent"><input type="checkbox" name="consent" ${state.consent ? "checked" : ""} ${state.busy ? "disabled" : ""}><span>${label("consent")}</span></label>${actionButton("demo", label("useDemo"), "button-plain", state.busy ? "disabled" : "")}` : ""}</div>`
+  const readyMarkup = `<div class="result-ready"><h3>${label("readyTitle")}</h3><p>${label("readyDescription")}</p>${actionButton("reveal", `${label(state.busy ? "revealing" : state.result ? "viewReading" : state.error ? "retry" : "reveal")} ✦`, "button-dark", canReveal ? "" : "disabled")}${state.busy ? waitingMarkup() : ""}${ai && !state.result ? `<label class="consent"><input type="checkbox" name="consent" ${state.consent ? "checked" : ""} ${state.busy ? "disabled" : ""}><span>${label("consent")}</span></label>${actionButton("demo", label("useDemo"), "button-plain", state.busy ? "disabled" : "")}` : ""}</div>`
   return `<div class="wizard-heading draw-heading"><p class="eyebrow">${label("drawEyebrow")}</p><h3 id="step-title" tabindex="-1">${label("drawTitle")}</h3><p>${label("drawDescription")}</p><span class="draw-counter">${label("drawCount", { chosen: state.chosen.length, total: state.count })}</span></div>${ready ? renderSlots() + readyMarkup : deckMarkup + renderSlots()}<p class="mode-bar"><span aria-hidden="true">✧</span>${label((state.result?.mode ?? session.serverConfig.mode) === "ai" ? "aiNotice" : "demoNotice")}</p>${state.error && !state.result ? `<p class="error-message" role="alert">${errorText(state.error)}</p>` : ""}<div class="wizard-footer">${actionButton("back", `← ${label("back")}`, "button-plain", motionLocked() ? "disabled" : "")}<span class="helper">${label("drawHint")}</span></div>`
 }
 

@@ -93,3 +93,10 @@ dialog::backdrop {
   text-align: center;
   z-index: 50;
 }
+/* Switch-diviner question: two clear choices. */
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}

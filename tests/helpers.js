@@ -39,11 +39,19 @@ export const providerResponse = (data) =>
     status: 200,
     headers: { "Content-Type": "application/json" }
   })
-export const geminiResponse = (text, finishReason = "STOP") => ({
-  candidates: [
-    {
-      finishReason,
-      content: { role: "model", parts: [{ text, thoughtSignature: "opaque" }] }
-    }
-  ]
+// An OpenAI-style chat completion, as returned by NVIDIA NIM.
+export const chatResponse = (content, finishReason = "stop") => ({
+  choices: [{ index: 0, finish_reason: finishReason, message: { role: "assistant", content } }]
 })
+
+// Diviners for server tests: real NVIDIA adapter, fake keys and models, short timeouts.
+import * as nvidiaProvider from "../server/ai/nvidia.js"
+export const testDiviners = (ids = [1]) =>
+  ids.map((id) => ({
+    id,
+    provider: nvidiaProvider,
+    apiKey: `private-test-key-${id}`,
+    model: `test-model-${id}`,
+    timeoutMs: 5000,
+    estimate: [1, 2]
+  }))

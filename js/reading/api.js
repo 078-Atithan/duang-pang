@@ -10,9 +10,17 @@ export async function getServerConfig({ timeout = 2500 } = {}) {
     })
     if (!response.ok) return { mode: "demo", reason: "unavailable" }
     const config = await response.json()
-    return config.mode === "ai"
-      ? { mode: "ai" }
-      : { mode: "demo", reason: "disabled" }
+    if (config.mode !== "ai") return { mode: "demo", reason: "disabled" }
+    const diviners = Array.isArray(config.diviners)
+      ? config.diviners.filter(
+          (item) =>
+            [1, 2, 3].includes(item?.id) &&
+            Number.isFinite(item.timeoutSeconds) &&
+            Array.isArray(item.estimate)
+        )
+      : []
+    // An older server without a diviner list still has one AI.
+    return { mode: "ai", diviners: diviners.length ? diviners : [{ id: 1, estimate: [10, 60], timeoutSeconds: 90 }] }
   } catch {
     return { mode: "demo", reason: "unavailable" }
   }

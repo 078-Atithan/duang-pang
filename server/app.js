@@ -5,11 +5,11 @@ import { deck } from "./deck.js"
 import { SAFE_HEADERS, json, readJson } from "./http.js"
 import { serveStatic } from "./static.js"
 import { LOOPBACK_HOST, hostOf, limit, list } from "./security.js"
-import { generateAiReading } from "./ai/gemini.js"
+import { configuredDiviners, publicDiviners } from "./ai/diviners.js"
 
 export function createAppServer({
-  apiKey = process.env.GEMINI_API_KEY || "",
-  model = process.env.GEMINI_MODEL || "",
+  // The AI models to read with, in order (see ai/diviners.js). Empty means local mode only.
+  diviners = configuredDiviners(),
   fetchImpl = fetch,
   // Sites allowed to call the API from another origin, e.g. https://078-atithan.github.io
   allowedOrigins = list(process.env.ALLOWED_ORIGINS),
@@ -25,7 +25,7 @@ export function createAppServer({
   trustProxy = process.env.TRUST_PROXY === "1",
   now = () => Date.now()
 } = {}) {
-  const aiEnabled = Boolean(apiKey && model)
+  const aiEnabled = diviners.length > 0
   // Host and origin allowlists, per-visitor and daily limits protect the API key and its quota.
   // Limits are in memory: they reset on restart and are per server instance.
   const visitors = new Map()
@@ -81,7 +81,12 @@ export function createAppServer({
         return response.end()
       }
       if (request.method === "GET" && url.pathname === "/api/config")
-        return json(response, 200, { mode: aiEnabled ? "ai" : "demo" }, cors)
+        return json(
+          response,
+          200,
+          aiEnabled ? { mode: "ai", diviners: publicDiviners(diviners) } : { mode: "demo" },
+          cors
+        )
       if (url.pathname === "/api/reading") {
         if (request.method !== "POST")
           return json(
@@ -97,7 +102,7 @@ export function createAppServer({
         const payload = validatePayload(await readJson(request), deck)
         if (!aiEnabled)
           throw new RequestError(
-            "AI is not configured. Use the local demo.",
+            "AI is not configured. Use local mode.",
             503,
             "config"
           )
@@ -106,6 +111,11 @@ export function createAppServer({
             "Consent is required before sending data to the provider",
             400
           )
+        // The browser picks the diviner and moves to the next one itself, after asking the visitor.
+        const diviner = payload.diviner
+          ? diviners.find((item) => item.id === payload.diviner)
+          : diviners[0]
+        if (!diviner) throw new RequestError("This diviner is not available", 400, "config")
         const today = new Date(now()).toISOString().slice(0, 10)
         if (today !== day) {
           day = today
@@ -137,7 +147,15 @@ export function createAppServer({
           return json(
             response,
             200,
-            await generateAiReading(payload, { apiKey, model, fetchImpl }),
+            {
+              ...(await diviner.provider.generateAiReading(payload, {
+                apiKey: diviner.apiKey,
+                model: diviner.model,
+                timeoutMs: diviner.timeoutMs,
+                fetchImpl
+              })),
+              diviner: diviner.id
+            },
             cors
           )
         } finally {

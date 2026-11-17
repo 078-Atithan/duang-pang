@@ -2,6 +2,7 @@
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { createAppServer } from "./app.js"
+import { configuredDiviners } from "./ai/diviners.js"
 import { LOOPBACK_HOST, list } from "./security.js"
 
 if (
@@ -24,7 +25,7 @@ if (
       `Duang Pang: http://${bindHost === "0.0.0.0" ? "127.0.0.1" : bindHost}:${port}`
     )
     console.log(
-      `Reading mode: ${process.env.GEMINI_API_KEY && process.env.GEMINI_MODEL ? "AI (consent required)" : "Local demo"}`
+      `Reading mode: ${configuredDiviners().map((d) => `Diviner ${d.id} = ${d.model}`).join(", ") || "local mode only (no AI keys set)"}`
     )
     if (!LOOPBACK_HOST.test(bindHost)) {
       console.log(

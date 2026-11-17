@@ -24,7 +24,9 @@ const freshState = () => ({
   error: "",
   result: null,
   resultPayload: null,
-  resultLanguages: {}
+  resultLanguages: {},
+  diviner: null, // the diviner currently reading (1-3), while busy
+  waitStarted: 0
 })
 export const state = freshState()
 

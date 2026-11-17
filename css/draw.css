@@ -208,3 +208,9 @@
   margin-top: 5px;
   accent-color: var(--purple);
 }
+.waiting-elapsed {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--purple);
+  font-variant-numeric: tabular-nums;
+}

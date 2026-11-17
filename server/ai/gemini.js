@@ -1,40 +1,29 @@
-import { validateReading } from "../../js/reading/validate.js"
-import { RequestError } from "../errors.js"
+// Google Gemini (generateContent with a response schema).
 import { SYSTEM_PROMPT, buildReadingInput } from "./prompt.js"
+import { CARD_FIELDS, blockedError, incompleteError, statusError, toReading } from "./shared.js"
 
-export async function generateAiReading(
-  payload,
-  { apiKey, model, fetchImpl = fetch }
-) {
-  const count = payload.cardIds.length
-  const cardFields = [
-    "position",
-    "img",
-    "cardName",
-    "meaning",
-    "reflection",
-    "prompt"
-  ]
-  // Gemini's OpenAPI-style schema; cards come before summary so the summary is written last.
-  const schema = {
+export const DEFAULT_MODEL = "gemini-flash-latest"
+const BLOCKED_REASONS = ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"]
+
+// Gemini's OpenAPI-style schema; cards come before summary so the summary is written last.
+function readingSchema(cardIds) {
+  return {
     type: "OBJECT",
     required: ["cards", "summary"],
     propertyOrdering: ["cards", "summary"],
     properties: {
       cards: {
         type: "ARRAY",
-        minItems: count,
-        maxItems: count,
+        minItems: cardIds.length,
+        maxItems: cardIds.length,
         items: {
           type: "OBJECT",
-          required: cardFields,
-          propertyOrdering: cardFields,
+          required: CARD_FIELDS,
+          propertyOrdering: CARD_FIELDS,
           properties: Object.fromEntries(
-            cardFields.map((field) => [
+            CARD_FIELDS.map((field) => [
               field,
-              field === "img"
-                ? { type: "STRING", format: "enum", enum: payload.cardIds }
-                : { type: "STRING" }
+              field === "img" ? { type: "STRING", format: "enum", enum: cardIds } : { type: "STRING" }
             ])
           )
         }
@@ -42,101 +31,39 @@ export async function generateAiReading(
       summary: { type: "STRING" }
     }
   }
+}
+
+export async function generateAiReading(
+  payload,
+  { apiKey, model = DEFAULT_MODEL, timeoutMs = 45000, fetchImpl = fetch, systemPrompt = SYSTEM_PROMPT }
+) {
   const upstream = await fetchImpl(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
     {
       method: "POST",
       headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(55000),
+      signal: AbortSignal.timeout(timeoutMs),
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: JSON.stringify(buildReadingInput(payload)) }]
-          }
-        ],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: JSON.stringify(buildReadingInput(payload)) }] }],
         // Thinking tokens count against maxOutputTokens, so leave generous headroom.
         generationConfig: {
           responseMimeType: "application/json",
-          responseSchema: schema,
+          responseSchema: readingSchema(payload.cardIds),
           temperature: 0.8,
           maxOutputTokens: 8192
         }
       })
     }
   )
-  // Do not forward provider error bodies: they may expose internal configuration. Map the status to a stable code.
-  if (!upstream.ok) {
-    if (upstream.status === 429)
-      throw new RequestError(
-        "The AI service has reached its usage limit. Please try again later.",
-        503,
-        "quota"
-      )
-    if ([500, 502, 503, 504].includes(upstream.status))
-      throw new RequestError(
-        "The AI service is busy. Please try again shortly.",
-        503,
-        "busy"
-      )
-    if ([400, 401, 403, 404].includes(upstream.status))
-      throw new RequestError(
-        "The AI service is not configured correctly",
-        502,
-        "config"
-      )
-    throw new RequestError(
-      "AI provider could not complete this reading",
-      502,
-      "provider"
-    )
-  }
+  if (!upstream.ok) throw statusError(upstream.status)
   const data = await upstream.json()
   const candidate = data.candidates?.[0]
-  if (
-    data.promptFeedback?.blockReason ||
-    ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"].includes(
-      candidate?.finishReason
-    )
-  ) {
-    throw new RequestError(
-      "This question could not be interpreted. Please rephrase it.",
-      422,
-      "blocked"
-    )
-  }
-  if (candidate?.finishReason !== "STOP")
-    throw new RequestError("The AI response was incomplete", 502, "incomplete")
-  const output = (candidate.content?.parts ?? [])
+  if (data.promptFeedback?.blockReason || BLOCKED_REASONS.includes(candidate?.finishReason)) throw blockedError()
+  if (candidate?.finishReason !== "STOP") throw incompleteError()
+  const text = (candidate.content?.parts ?? [])
     .filter((part) => !part.thought)
     .map((part) => part.text ?? "")
     .join("")
-  try {
-    const parsed = JSON.parse(output)
-    const cards = parsed.cards.map(
-      ({ img, cardName, meaning, reflection, prompt }) => ({
-        img,
-        cardName,
-        meaning,
-        reflection,
-        prompt
-      })
-    )
-    return validateReading(
-      {
-        summary: parsed.summary,
-        cards,
-        mode: "ai",
-        language: payload.language
-      },
-      payload.cardIds
-    )
-  } catch {
-    throw new RequestError(
-      "The AI response did not match the chosen cards",
-      502,
-      "invalid_response"
-    )
-  }
+  return toReading(text, payload)
 }
