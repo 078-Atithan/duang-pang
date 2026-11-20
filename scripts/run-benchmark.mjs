@@ -12,8 +12,49 @@ import { SYSTEM_PROMPT } from "../server/ai/prompt.js"
 
 const ROOT = new URL("../", import.meta.url)
 
-// PROD is the live production prompt from server/ai/prompt.js.
+// Slide prompts: all three share the production prompt's input description, Thai-only
+// language rule, JSON output definition, card-name style rule and safety limits.
+// Only the sections under comparison differ. swap() fails loudly if the production text changes.
+function swap(text, from, to) {
+  if (text.split(from).length !== 2) throw new Error(`Slide prompt: section not found: ${from.slice(0, 60)}`)
+  return text.replace(from, () => to)
+}
+const MILESTONE_TIMING = SYSTEM_PROMPT.slice(SYSTEM_PROMPT.indexOf("- Be concrete about situations"), SYSTEM_PROMPT.indexOf("- Read other people's feelings"))
+const HIGH_STAKES = SYSTEM_PROMPT.slice(SYSTEM_PROMPT.indexOf("HIGH-STAKES DECISIONS"), SYSTEM_PROMPT.indexOf("LIMITS (the only things"))
+const DECISIVE = SYSTEM_PROMPT.slice(SYSTEM_PROMPT.indexOf("BE DEFINITE"), SYSTEM_PROMPT.indexOf("LIMITS (the only things"))
+// P1: the original decisive prompt, before the timing and high-stakes guardrails.
+const P1 = swap(
+  swap(SYSTEM_PROMPT, MILESTONE_TIMING, `- Be concrete: name specific situations, behaviours and timeframes, such as
+  "within the next three months" or "before the end of this year", so the
+  reading can clearly turn out right or wrong.
+`),
+  HIGH_STAKES,
+  ""
+)
+// P2: empathetic, deeply profile-based counselling instead of decisive verdicts.
+const P2 = swap(
+  swap(
+    SYSTEM_PROMPT,
+    "Write a confident, specific and decisive tarot reading from the JSON the user sends.\nYou speak like an experienced fortune teller who stands behind every prediction.",
+    "Write a warm, psychologically grounded tarot reading from the JSON the user sends.\nYou speak like a wise mentor and counsellor, not a fatalistic fortune teller."
+  ),
+  DECISIVE,
+  `EMPATHETIC COUNSELLING
+- Tone: warm, validating, grounded and empowering.
+- Connect each card's light and shadow meanings directly to the querent's age,
+  occupation, relationship status and life stage in depth.
+- Help the querent explore the decision and their feelings about it rather than
+  issuing a fixed verdict; show what each path asks of them.
+- Use the prompt field for practical next-step questions that encourage action
+  rather than passive waiting.
+
+`
+)
+// PROD is the live production prompt from server/ai/prompt.js (= slide Prompt 3).
 const PROMPTS = {
+  P1,
+  P2,
+  P3: SYSTEM_PROMPT,
   PROD: SYSTEM_PROMPT,
   A: `You are a decisive, insightful tarot reader for Duang Pang. Interpret the drawn cards in their spread positions based strictly on the provided querent profile, topic, and question.
 
@@ -62,7 +103,7 @@ const BASE_PAYLOAD = {
 const CARD_NAMES = BASE_PAYLOAD.cardIds.map((id) => deck.find((card) => card.img === id).name)
 const HEDGES = /อาจจะ|อาจ|น่าจะ|ขึ้นอยู่กับ|บางที|\b(maybe|perhaps|might|may|could)\b/gi
 
-const DEADLINES = /ภายในs*d+s*(วัน|สัปดาห์|เดือน)|ภายใน(สัปดาห์|เดือน|ไตรมาส)(นี้|หน้า)|เดือนหน้า|สัปดาห์หน้า|ไตรมาสหน้า|within d+ (days?|weeks?|months?)|next (week|month|quarter|tuesday)/gi
+const DEADLINES = /ภายใน\s*\d+\s*(วัน|สัปดาห์|เดือน)|ภายใน(สามเดือน|สัปดาห์|เดือน|ไตรมาส)(นี้|หน้า)?|เดือนหน้า|สัปดาห์หน้า|ไตรมาสหน้า|วันที่\s*\d+\s*ของเดือน|within \d+ (days?|weeks?|months?)|next (week|month|quarter|tuesday)/gi
 const ABRUPT = /ลาออกทันที|ลาออกได้เลย|ส่ง(ใบ|จดหมาย)ลาออก(ได้)?(เลย|ทันที|วันนี้)|ตั้งแต่วันนี้|quit (now|immediately)|resign immediately/gi
 const MILESTONES = /เงินสำรอง|ฐานลูกค้า|ลูกค้าประจำ|ควบคู่|งานเสริม|ทดลอง|เตรียม|savings|runway|side project|clients/gi
 
